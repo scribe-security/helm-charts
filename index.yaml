@@ -1,4 +1,25 @@
 apiVersion: v1
 entries:
   admission-controller:
-generated: "2022-11-08T17:34:53.177951513Z"
+  - annotations:
+      artifacthub.io/images: |
+        - name: admission-controller
+          image: scribesecuriy.jfrog.io/scribe-docker-public-local/valint@sha256:9e188240a249dd32aa2a6ddcee959fd2ea1828faaf6c332c55472095e4e4efb2
+      artifacthub.io/license: Apache-2.0
+    apiVersion: v2
+    appVersion: 0.0.27-13
+    created: "2022-11-08T18:19:39.758792264Z"
+    description: Scribe admissions helm chart, Validate the integrity of your supply
+      chain.
+    digest: 2f0aef5e0b2f85f990a38905f4d255d824e0612e3f047a89ee85faf66382da74
+    home: https://scribesecurity.com
+    maintainers:
+    - name: houdini91
+    name: admission-controller
+    sources:
+    - https://github.com/scribe-security/valint
+    type: application
+    urls:
+    - https://github.com/scribe-security/helm-charts/releases/download/admission-controller-0.0.27/admission-controller-0.0.27.tgz
+    version: 0.0.27
+generated: "2022-11-08T18:19:39.758800364Z"
