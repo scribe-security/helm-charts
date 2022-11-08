@@ -10,7 +10,7 @@ type: application
 
 name: admission-controller
 version: 0.0.27
-appVersion: 0.0.27-12
+appVersion: 0.0.27-13
 
 maintainers:
   - name: houdini91
@@ -19,5 +19,5 @@ annotations:
   artifacthub.io/license: Apache-2.0
   artifacthub.io/images: |
     - name: admission-controller
-      image: scribesecuriy.jfrog.io/scribe-docker-public-local/valint@sha256:469ec39568d7991de919a425c604b8d8451b51b29f21f95c5041cf4707ff9d0d
+      image: scribesecuriy.jfrog.io/scribe-docker-public-local/valint@sha256:9e188240a249dd32aa2a6ddcee959fd2ea1828faaf6c332c55472095e4e4efb2
     
