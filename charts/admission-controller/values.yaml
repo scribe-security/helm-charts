@@ -4,7 +4,7 @@ webhook:
   name: webhook
   image:
     repository: scribesecuriy.jfrog.io/scribe-docker-public-local/valint
-    version: v0.0.27-12-admission
+    version: v0.0.27-12-SNAPSHOT-0d0ec3d-admission
     pullPolicy: IfNotPresent
   env: {}
   extraArgs:

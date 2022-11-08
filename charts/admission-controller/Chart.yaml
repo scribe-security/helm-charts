@@ -19,5 +19,5 @@ annotations:
   artifacthub.io/license: Apache-2.0
   artifacthub.io/images: |
     - name: admission-controller
-      image: scribesecuriy.jfrog.io/scribe-docker-public-local/valint@sha256:a681f3ca273881e07b48fa17f75a5b5f3ca688c1a91fd809fdba7d1733083ee6
+      image: scribesecuriy.jfrog.io/scribe-docker-public-local/valint@sha256:469ec39568d7991de919a425c604b8d8451b51b29f21f95c5041cf4707ff9d0d
     
