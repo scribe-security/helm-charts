@@ -44,9 +44,9 @@ jobs:
         with:
           version: v3.10.1
 
-      # - name: Add dependency chart repos
-      #   run: |
-      #     helm repo add scribe https://scribe-security.github.io/helm-charts
+      - name: Add dependency chart repos
+        run: |
+          helm repo add scribe https://scribe-security.github.io/helm-charts
 
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.4.1
