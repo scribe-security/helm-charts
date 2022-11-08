@@ -95,22 +95,22 @@ clean: ## Uninstall admission
 	$(shell kubectl --namespace $(NAMESPACE) delete "$$(kubectl api-resources --namespaced=true --verbs=delete -o name | tr '\n' ',' | sed -e 's/,$$//')" --all)  || true
 
 .PHONY: test
-simple_test: ## Test admission
+accept_test: ## Test admission
 	@kubectl create namespace test || true
 	@kubectl label namespace test admission.scribe.dev/include=true
-	@kubectl apply -f charts/admission-controller/examples/nginx_deployment.yaml -n test
+	@kubectl apply -f charts/admission-controller/examples/accept_deployment.yaml -n test
 
 .PHONY: test
-mid_test: ## Test admission
+deny_test: ## Test admission
 	@kubectl create namespace test || true
 	@kubectl label namespace test admission.scribe.dev/include=true
-	@kubectl apply -f charts/admission-controller/examples/multi_nginx_deployment.yaml -n test
+	@kubectl apply -f charts/admission-controller/examples/deny_deployment.yaml -n test
 
 
 .PHONY: clean_test
 clean_test: ## Clean test admission
-	@kubectl delete -f charts/admission-controller/examples/nginx_deployment.yaml -n test || true
-	@kubectl delete -f charts/admission-controller/examples/multi_nginx_deployment.yaml -n test || true
+	@kubectl delete -f charts/admission-controller/examples/accept_deployment.yaml -n test || true
+	@kubectl delete -f charts/admission-controller/examples/deny_deployment.yaml -n test || true
 
 
 .PHONY: sync_pre_release
