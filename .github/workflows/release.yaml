@@ -1,0 +1,58 @@
+
+name: release
+
+on:
+  push:
+    tags:
+      - "*"
+  workflow_dispatch:
+
+permissions:
+    contents: write
+    packages: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      # - name: Prepare GPG key
+      #   run: |
+      #     gpg_dir=.cr-gpg
+      #     mkdir "$gpg_dir"
+      #     keyring="$gpg_dir/secring.gpg"
+      #     base64 -d <<< "$GPG_KEYRING_BASE64" > "$keyring"
+      #     passphrase_file="$gpg_dir/passphrase"
+      #     echo "$GPG_PASSPHRASE" > "$passphrase_file"
+      #     echo "CR_PASSPHRASE_FILE=$passphrase_file" >> "$GITHUB_ENV"
+      #     echo "CR_KEYRING=$keyring" >> "$GITHUB_ENV"
+      #   env:
+      #     GPG_KEYRING_BASE64: "${{ secrets.GPG_KEYRING_BASE64 }}"
+      #     GPG_PASSPHRASE: "${{ secrets.GPG_PASSPHRASE }}"
+
+      - name: Install Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: v3.10.1
+
+      # - name: Add dependency chart repos
+      #   run: |
+      #     helm repo add scribe https://scribe-security.github.io/helm-charts
+
+      - name: Run chart-releaser
+        uses: helm/chart-releaser-action@v1.4.1
+        with:
+          config: cr.yaml
+        env:
+          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          CR_SKIP_EXISTING: true
+          CR_PAGES_BRANCH: gh-pages-new

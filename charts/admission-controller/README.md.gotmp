@@ -1,0 +1,76 @@
+{{ template "chart.header" . }}
+
+{{ template "chart.deprecationWarning" . }}
+
+{{ template "chart.badgesSection" . }}
+
+{{ template "chart.description" . }}
+
+{{ template "chart.homepageLine" . }}
+
+{{ template "chart.kubeVersionLine" . }}
+
+## Before you begin
+Integrating Scribe Hub with Jenkins requires the following credentials that are found in the product setup dialog (In your **[Scribe Hub](https://prod.hub.scribesecurity.com/ "Scribe Hub Link")** go to Home>Products>[$product]>Setup)
+
+* **product key**
+* **client id**
+* **client secret**
+
+>Note that the product key is unique per product, while the client id and secret are unique for your account.
+
+## Procedure
+
+### Installing `{{ template "chart.name" . }}`
+* The following commands can be used to add the chart repository to dedicated namespace:
+
+```bash
+helm repo add scribe https://scribe-security.github.io/helm-charts
+helm repo update
+helm install scribe scribe/{{ template "chart.name" . }}
+kubectl create namespace scribe
+```
+
+* To install the helm chart with default values run the following command. \
+Credentials will be stored as a secret named `{{ template "chart.name" . }}-scribe-cred`.
+```bash
+helm install scribe -n scribe scribe/{{ template "chart.name" . }} \
+		--set scribe.auth.client_id=$(CLIENT_ID) \
+		--set scribe.auth.client_secret=$(CLIENT_SECRET) \
+		--set context.name=$(PRODUCT_KEY)
+		
+```
+The [Values](#Values) section describes the configuration options for this chart.
+
+### Enabling Scribe Admission - `admission.scribe.dev/include`
+
+In order to enable admission on a namespace you must add `admission.scribe.dev/include` label to it.
+Namespaces will trigger Scribe admission logic on all its resources.
+
+> Note: Resources can further limited by image `glob` selector flag.
+
+Command:
+```bash
+kubectl label namespace my-namespace admission.scribe.dev/include=true
+```
+
+Configuration:
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    admission.scribe.dev/include: "true"
+  name: my-namespace
+```
+
+## Uninstall `{{ template "chart.name" . }}`
+Uninstall the chart by running
+
+```bash
+helm uninstall -n scribe {{ template "chart.name" . }}
+```
+
+{{ template "chart.requirementsSection" . }}
+
+{{ template "chart.valuesSection" . }}

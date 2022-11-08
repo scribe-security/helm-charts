@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    {{- include "admission-controller.labels" . | nindent 4 }}
+    control-plane: {{ template "admission-controller.fullname" . }}-webhook
+  name: {{ template "admission-controller.fullname" . }}-webhook-logging
+  namespace: {{ .Release.Namespace }}
+data:
+  zap-logger-config: |-
+    {
+      "level": "info",
+      "development": false,
+      "outputPaths": ["stdout"],
+      "errorOutputPaths": ["stderr"],
+      "encoding": "json",
+      "encoderConfig": {
+        "timeKey": "ts",
+        "levelKey": "level",
+        "nameKey": "logger",
+        "callerKey": "caller",
+        "messageKey": "msg",
+        "lineEnding": "",
+        "levelEncoder": "",
+        "timeEncoder": "iso8601",
+        "durationEncoder": "",
+        "callerEncoder": ""
+      }
+    }
+
+  # "stacktraceKey": "stacktrace",
+
+  # Log level overrides
+  # Changes are be picked up immediately.
+  loglevel.controller: "info"
+  loglevel.webhook: "info"
+{{- if .Values.serviceMonitor.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    {{- include "admission-controller.labels" . | nindent 4 }}
+    control-plane: {{ template "admission-controller.fullname" . }}-webhook
+  name: {{ template "admission-controller.fullname" . }}-webhook-observability
+  namespace: {{ .Release.Namespace }}
+data:
+  metrics.backend-destination: prometheus
+  metrics.request-metrics-backend-destination: prometheus
+{{- end }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    {{- include "admission-controller.labels" . | nindent 4 }}
+    control-plane: {{ template "admission-controller.fullname" . }}-webhook
+  name: scribe-config
+  namespace: {{ .Release.Namespace }}
+data:
+  config: {{ .Values.config | toYaml | quote }}

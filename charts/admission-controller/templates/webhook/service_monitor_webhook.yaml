@@ -1,0 +1,17 @@
+{{- if .Values.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ template "admission-controller.fullname" . }}-webhook-monitor
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "admission-controller.labels" . | nindent 4 }}
+    control-plane: {{ template "admission-controller.fullname" . }}-webhook
+spec:
+  endpoints:
+    - path: /metrics
+      port: metrics
+  selector:
+    matchLabels:
+      control-plane: {{ template "admission-controller.fullname" . }}-webhook
+{{- end }}

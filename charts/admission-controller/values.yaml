@@ -1,0 +1,80 @@
+
+webhook:
+  replicaCount: 1
+  name: webhook
+  image:
+    repository: scribesecuriy.jfrog.io/scribe-docker-public-local/valint
+    version: v0.0.27-12-admission
+    pullPolicy: IfNotPresent
+  env: {}
+  extraArgs:
+    structured: true
+    verbose: 2
+  # resources:
+  #   limits:
+  #     cpu: 500m
+  #     memory: 512Mi
+  #   requests:
+  #     cpu: 500m
+  #     memory: 256Mi
+  securityContext:
+    enabled: false
+    runAsUser: 65532
+  podSecurityContext:
+    enabled: true
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    runAsUser: 1000
+    capabilities:
+      drop:
+        - all
+  serviceAccount:
+    annotations: {}
+  service:
+    annotations: {}
+    type: ClusterIP
+    port: 443
+    # For nodeport, specify the following:
+    #   type: NodePort
+    #   nodePort: <port-number>
+  secretName: ""
+  webhookName: "admission.scribe.dev"
+
+
+scribe:
+  auth:
+    # -- Scribe Client ID
+    client_id: ""
+    # -- Scribe Client Secret
+    client_secret: ""
+    # login_url: https://scribesecurity-staging.us.auth0.com
+    # audience: api.staging.scribesecurity.com
+  service:
+    # -- Scribe API Url
+    url: https://api.production.scribesecurity.com
+    enable: true
+
+config:
+  context:
+    # -- Scribe Project Key
+    name: ""
+  admission:
+      # -- Select admitted images by regex
+    glob:
+      - .*nginx.*
+      - test
+  report:
+    # -- Select report sections,
+    sections:
+      - summary
+
+
+## common node selector for all the pods
+commonNodeSelector: {}
+commonTolerations: []
+
+imagePullSecrets: []
+
+## serviceMonitor makes metrics discoverable to prometheus
+serviceMonitor:
+  enabled: false
