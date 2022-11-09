@@ -10,7 +10,7 @@
 # when the hash of the last commit in the branch you set up changes. This does
 # NOT apply to ownership claim operations, which are processed immediately.
 #
-# repositoryID: The ID of the Artifact Hub repository where the packages will be published to (optional, but it enables verified publisher)
+repositoryID: d4b2dc80-7020-4971-9a1d-178667b10f48
 owners: # (optional, used to claim repository ownership)
   - name: houdini91
     email: mdstrauss91@gmail.com
