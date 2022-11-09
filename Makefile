@@ -116,3 +116,7 @@ clean_test: ## Clean test admission
 .PHONY: sync_pre_release
 sync_pre_release:
 	$(shell bash ./scripts/sync_pre_relase.sh $(ADMISSION_PRE_RELASE)) || true
+
+
+list_vesrsions:
+	helm search repo scribe/admission-controller --devel --versions
