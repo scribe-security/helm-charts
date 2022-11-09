@@ -37,7 +37,7 @@ install_namespace:  ## Create admission namespace
 
 .PHONY: install
 install: ## Install admission (release helm)
-	@helm install --debug  \
+	@helm install --devel --debug  \
 		--set scribe.auth.client_id=$(SCRIBE_CLIENT_ID) \
 		--set scribe.auth.client_secret=$(SCRIBE_CLIENT_SECRET) \
 		$(NAME) -n $(NAMESPACE) scribe/$(NAME)

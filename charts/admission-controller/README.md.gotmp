@@ -1,3 +1,8 @@
+---
+title: Admission Controller
+sidebar_position: 4
+---
+
 {{ template "chart.header" . }}
 
 {{ template "chart.deprecationWarning" . }}

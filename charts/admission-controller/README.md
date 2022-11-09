@@ -1,6 +1,11 @@
+---
+title: Admission Controller
+sidebar_position: 4
+---
+
 # admission-controller
 
-![Version: 0.1.1](https://img.shields.io/badge/Version-0.1.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
+![Version: 0.0.27-13](https://img.shields.io/badge/Version-0.0.27--13-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.27-13](https://img.shields.io/badge/AppVersion-0.0.27--13-informational?style=flat-square)
 
 Scribe admissions helm chart, Validate the integrity of your supply chain.
 
@@ -87,7 +92,7 @@ helm uninstall -n scribe admission-controller
 | webhook.extraArgs.verbose | int | `2` |  |
 | webhook.image.pullPolicy | string | `"IfNotPresent"` |  |
 | webhook.image.repository | string | `"scribesecuriy.jfrog.io/scribe-docker-public-local/valint"` |  |
-| webhook.image.version | string | `"dev-latest-admission"` |  |
+| webhook.image.version | string | `"v0.0.27-13-admission"` |  |
 | webhook.name | string | `"webhook"` |  |
 | webhook.podSecurityContext.allowPrivilegeEscalation | bool | `false` |  |
 | webhook.podSecurityContext.capabilities.drop[0] | string | `"all"` |  |
