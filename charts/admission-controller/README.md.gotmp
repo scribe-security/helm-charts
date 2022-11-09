@@ -32,7 +32,6 @@ Integrating Scribe Hub with Jenkins requires the following credentials that are 
 ```bash
 helm repo add scribe https://scribe-security.github.io/helm-charts
 helm repo update
-helm install scribe scribe/{{ template "chart.name" . }}
 kubectl create namespace scribe
 ```
 
