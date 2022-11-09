@@ -11,6 +11,7 @@ type: application
 name: admission-controller
 version: 0.0.27-13
 appVersion: 0.0.27-13
+icon: https://raw.githubusercontent.com/scribe-security/misc/master/assets/logo-white.svg
 
 maintainers:
   - name: houdini91
