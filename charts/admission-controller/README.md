@@ -47,7 +47,7 @@ The [Values](#Values) section describes the configuration options for this chart
 In order to enable admission on a namespace you must add `admission.scribe.dev/include` label to it.
 Namespaces will trigger Scribe admission logic on all its resources.
 
-> Note: Resources can further limited by image `glob` selector flag.
+>Resources can further limited by image `glob` selector flag.
 
 Command:
 ```bash
