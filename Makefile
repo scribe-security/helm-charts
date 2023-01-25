@@ -26,10 +26,20 @@ define title
     @printf '$(TITLE)$(1)$(RESET)\n'
 endef
 
+include env
+
 ## Tasks
 .PHONY: help
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "$(BOLD)$(CYAN)%-25s$(RESET)%s\n", $$1, $$2}'
+
+.PHONY: login
+login:
+	kubectl create secret docker-registry $(REPO_SECRET_NAME) \
+		--docker-server=$(REPO_URL) \
+		--docker-username=$(REPO_USERNAME) \
+		--docker-password=$(REPO_PASSWORD) \
+		-n $(NAMESPACE)
 
 .PHONY: namespace
 install_namespace:  ## Create admission namespace

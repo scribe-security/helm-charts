@@ -20,10 +20,10 @@ spec:
     spec:
       nodeSelector:
         {{- toYaml .Values.commonNodeSelector | nindent 8 }}
-      {{- if .Values.imagePullSecrets }}
-      imagePullSecrets:
-{{ toYaml .Values.imagePullSecrets | indent 8 }}
-      {{- end }}        
+#       {{- if .Values.imagePullSecrets }}
+#       imagePullSecrets:
+# {{ toYaml .Values.imagePullSecrets | indent 8 }}
+#       {{- end }}        
       tolerations:
         {{- toYaml .Values.commonTolerations | nindent 8 }}
       serviceAccountName: {{ template "admission-controller.fullname" . }}-webhook
@@ -69,6 +69,9 @@ spec:
         {{- end }}
         {{- if .Values.webhook.secretName }}
         - --secret-name={{ .Values.webhook.secretName }}
+        {{- end }}
+        {{- if .Values.imagePullSecrets }}
+        - --image-pull-secrets={{ join "," .Values.imagePullSecrets }}
         {{- end }}
         {{- range $key, $value := .Values.webhook.extraArgs }}
         - --{{ $key }}={{ $value }}
