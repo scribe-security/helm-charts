@@ -37,6 +37,15 @@ spec:
                   control-plane: {{ template "admission-controller.fullname" . }}-webhook
               topologyKey: kubernetes.io/hostname
             weight: 100
+      initContainers:
+      - name: copy-secret
+        image: alpine
+        command: ["sh", "-c", "mkdir /writable-volume/.docker/ && cp -r /etc/secret-volume/* /writable-volume/.docker/"]
+        volumeMounts:
+        - name: secret-volume
+          mountPath: /etc/secret-volume
+        - name: writable-home-dir
+          mountPath: /writable-volume
       containers:
       - name: {{ template "admission-controller.name" . }}-{{ .Values.webhook.name }}
         image: "{{ template "admission-controller.image" .Values.webhook.image }}"
@@ -133,3 +142,6 @@ spec:
       volumes:
       - emptyDir: {}
         name: writable-home-dir
+      - name:  secret-volume
+        secret:
+          secretName: {{ .Values.webhook.image.authJSON }}
