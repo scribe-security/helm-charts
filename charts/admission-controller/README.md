@@ -107,3 +107,4 @@ helm uninstall -n scribe admission-controller
 | webhook.service.type | string | `"ClusterIP"` |  |
 | webhook.serviceAccount.annotations | object | `{}` |  |
 | webhook.webhookName | string | `"admission.scribe.dev"` |  |
+
