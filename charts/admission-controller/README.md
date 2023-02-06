@@ -5,7 +5,7 @@ sidebar_position: 4
 
 # admission-controller
 
-![Version:0.1.3-8](https://img.shields.io/badge/Version-0.1.3--8-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion:0.1.3-8](https://img.shields.io/badge/AppVersion-0.0.27--13-informational?style=flat-square)
+![Version: 0.1.3-9](https://img.shields.io/badge/Version-0.1.3--9-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.3-9](https://img.shields.io/badge/AppVersion-0.1.3--9-informational?style=flat-square)
 
 Scribe admissions helm chart, Validate the integrity of your supply chain.
 
@@ -47,7 +47,7 @@ The [Values](#Values) section describes the configuration options for this chart
 In order to enable admission on a namespace you must add `admission.scribe.dev/include` label to it.
 Namespaces will trigger Scribe admission logic on all its resources.
 
->Resources can further limited by image `glob` selector flag.
+> Note: Resources can further limited by image `glob` selector flag.
 
 Command:
 ```bash
@@ -77,21 +77,22 @@ helm uninstall -n scribe admission-controller
 |-----|------|---------|-------------|
 | commonNodeSelector | object | `{}` |  |
 | commonTolerations | list | `[]` |  |
-| config.admission.glob | list | `[".*nginx.*","test"]` | Select admitted images by regex |
+| config.admission.glob | list | `[]` | Select admitted images by regex |
+| config.attest.cocosign.storer.OCI.enable | bool | `true` |  |
+| config.attest.default | string | `"sigstore"` |  |
 | config.context.name | string | `""` | Scribe Project Key |
-| config.report.sections | list | `["summary"]` | Select report sections, |
+| config.verify.input-format | string | `"attest"` |  |
 | imagePullSecrets | list | `[]` |  |
 | scribe.auth.client_id | string | `""` | Scribe Client ID |
 | scribe.auth.client_secret | string | `""` | Scribe Client Secret |
-| scribe.service.enable | bool | `true` |  |
-| scribe.service.url | string | `"https://api.production.scribesecurity.com"` | Scribe API Url |
+| scribe.service.enable | bool | `false` |  |
 | serviceMonitor.enabled | bool | `false` |  |
 | webhook.env | object | `{}` |  |
 | webhook.extraArgs.structured | bool | `true` |  |
 | webhook.extraArgs.verbose | int | `2` |  |
 | webhook.image.pullPolicy | string | `"IfNotPresent"` |  |
 | webhook.image.repository | string | `"scribesecuriy.jfrog.io/scribe-docker-public-local/valint"` |  |
-| webhook.image.version | string | `"v0.0.27-13-admission"` |  |
+| webhook.image.version | string | `"v0.1.3-9-admission"` |  |
 | webhook.name | string | `"webhook"` |  |
 | webhook.podSecurityContext.allowPrivilegeEscalation | bool | `false` |  |
 | webhook.podSecurityContext.capabilities.drop[0] | string | `"all"` |  |
@@ -107,4 +108,3 @@ helm uninstall -n scribe admission-controller
 | webhook.service.type | string | `"ClusterIP"` |  |
 | webhook.serviceAccount.annotations | object | `{}` |  |
 | webhook.webhookName | string | `"admission.scribe.dev"` |  |
-

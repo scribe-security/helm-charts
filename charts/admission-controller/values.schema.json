@@ -15,10 +15,33 @@
                     "type": "object",
                     "properties": {
                         "glob": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
+                            "type": "array"
+                        }
+                    }
+                },
+                "attest": {
+                    "type": "object",
+                    "properties": {
+                        "cocosign": {
+                            "type": "object",
+                            "properties": {
+                                "storer": {
+                                    "type": "object",
+                                    "properties": {
+                                        "OCI": {
+                                            "type": "object",
+                                            "properties": {
+                                                "enable": {
+                                                    "type": "boolean"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
+                        },
+                        "default": {
+                            "type": "string"
                         }
                     }
                 },
@@ -30,14 +53,11 @@
                         }
                     }
                 },
-                "report": {
+                "verify": {
                     "type": "object",
                     "properties": {
-                        "sections": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
+                        "input-format": {
+                            "type": "string"
                         }
                     }
                 }
@@ -65,9 +85,6 @@
                     "properties": {
                         "enable": {
                             "type": "boolean"
-                        },
-                        "url": {
-                            "type": "string"
                         }
                     }
                 }

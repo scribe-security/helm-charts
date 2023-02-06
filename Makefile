@@ -52,11 +52,32 @@ install: ## Install admission (release helm)
 		--set scribe.auth.client_secret=$(SCRIBE_CLIENT_SECRET) \
 		$(NAME) -n $(NAMESPACE) scribe/$(NAME)
 
-.PHONY: install_local
-install_local: ## Install admission
+.PHONY: install_local_scribe
+install_local_scribe:  ## Install admission with scribe
 	@helm install --debug  \
+		--set scribe.service.enable=true \
 		--set scribe.auth.client_id=$(SCRIBE_CLIENT_ID) \
 		--set scribe.auth.client_secret=$(SCRIBE_CLIENT_SECRET) \
+		$(NAME) -n $(NAMESPACE) ./charts/$(NAME) --devel
+
+.PHONY: install_local_oci
+install_local_oci: login ## Install admission with oci
+	@helm install --debug  \
+		--set config.attest.cocosign.storer.OCI.enable=true \
+		--set config.attest.cocosign.storer.OCI.repo=${REPO_FULL} \
+		--set imagePullSecrets={$(REPO_SECRET_NAME)} \
+		$(NAME) -n $(NAMESPACE) ./charts/$(NAME) --devel
+
+.PHONY: upgrade_local_glob
+upgrade_local_glob:
+	@helm upgrade --debug \
+		--set config.admission.glob={\.\*nginx\.\*} \
+		$(NAME) -n $(NAMESPACE) ./charts/$(NAME) --devel
+
+.PHONY: upgrade_local_format
+upgrade_local_format:
+	@helm upgrade --debug \
+		--set config.verify.input-format=statement \
 		$(NAME) -n $(NAMESPACE) ./charts/$(NAME) --devel
 
 .PHONY: bootstrap
