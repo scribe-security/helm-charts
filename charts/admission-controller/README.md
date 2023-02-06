@@ -5,7 +5,7 @@ sidebar_position: 4
 
 # admission-controller
 
-![Version: 0.1.3-9](https://img.shields.io/badge/Version-0.1.3--9-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.3-9](https://img.shields.io/badge/AppVersion-0.1.3--9-informational?style=flat-square)
+![Version: 0.1.4-1](https://img.shields.io/badge/Version-0.1.4--1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.4-1](https://img.shields.io/badge/AppVersion-0.1.4--1-informational?style=flat-square)
 
 Scribe admissions helm chart, Validate the integrity of your supply chain.
 
@@ -81,8 +81,8 @@ helm uninstall -n scribe admission-controller
 | config.attest.cocosign.storer.OCI.enable | bool | `true` |  |
 | config.attest.default | string | `"sigstore"` |  |
 | config.context.name | string | `""` | Scribe Project Key |
-| config.verify.input-format | string | `"attest"` |  |
-| imagePullSecrets | list | `[]` |  |
+| config.verify.input-format | string | `"attest"` | Evidence format |
+| imagePullSecrets | list | `[]` | OCI evidence store secret name |
 | scribe.auth.client_id | string | `""` | Scribe Client ID |
 | scribe.auth.client_secret | string | `""` | Scribe Client Secret |
 | scribe.service.enable | bool | `false` |  |
@@ -92,7 +92,7 @@ helm uninstall -n scribe admission-controller
 | webhook.extraArgs.verbose | int | `2` |  |
 | webhook.image.pullPolicy | string | `"IfNotPresent"` |  |
 | webhook.image.repository | string | `"scribesecuriy.jfrog.io/scribe-docker-public-local/valint"` |  |
-| webhook.image.version | string | `"v0.1.3-9-admission"` |  |
+| webhook.image.version | string | `"v0.1.4-1-admission"` |  |
 | webhook.name | string | `"webhook"` |  |
 | webhook.podSecurityContext.allowPrivilegeEscalation | bool | `false` |  |
 | webhook.podSecurityContext.capabilities.drop[0] | string | `"all"` |  |
