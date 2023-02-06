@@ -224,10 +224,7 @@ Uninstall the chart by running
 helm uninstall -n scribe admission-controller
 ```
 
-## Values
-The [Values](#Values) section describes the configuration options for this chart.
-
-## Valint configuration
+## Configuration values
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | config.admission.glob | list | `[]` | Select admitted images by regex |
@@ -241,7 +238,8 @@ The [Values](#Values) section describes the configuration options for this chart
 | scribe.auth.client_secret | string | `""` | Scribe Client Secret |
 | scribe.service.enable | bool | `false` | Scribe Client Enable |
 
-## Other configurations
+For the full list of available values see the following section.
+
 ## Values
 
 | Key | Type | Default | Description |
@@ -249,8 +247,9 @@ The [Values](#Values) section describes the configuration options for this chart
 | commonNodeSelector | object | `{}` |  |
 | commonTolerations | list | `[]` |  |
 | config.admission.glob | list | `[]` | Select admitted images by regex |
-| config.attest.cocosign.storer.OCI.enable | bool | `true` |  |
-| config.attest.default | string | `"sigstore"` |  |
+| config.attest.cocosign.storer.OCI.enable | bool | `true` | OCI evidence enable |
+| config.attest.cocosign.storer.OCI.repo | string | `""` | OCI evidence repo location  |
+| config.attest.default | string | `"sigstore"` | Signature verification type |
 | config.context.name | string | `""` | Scribe Project Key |
 | config.verify.input-format | string | `"attest"` | Evidence format |
 | imagePullSecrets | list | `[]` | OCI evidence store secret name |

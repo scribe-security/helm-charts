@@ -226,10 +226,7 @@ Uninstall the chart by running
 helm uninstall -n scribe admission-controller
 ```
 
-## Values
-The [Values](#Values) section describes the configuration options for this chart.
-
-## Valint configuration
+## Configuration values
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | config.admission.glob | list | `[]` | Select admitted images by regex |
@@ -243,5 +240,6 @@ The [Values](#Values) section describes the configuration options for this chart
 | scribe.auth.client_secret | string | `""` | Scribe Client Secret |
 | scribe.service.enable | bool | `false` | Scribe Client Enable |
 
-## Other configurations
+For the full list of available values see the following section.
+
 {{ template "chart.valuesSection" . }}
