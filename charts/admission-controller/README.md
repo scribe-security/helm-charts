@@ -3,19 +3,20 @@ title: Admission Controller
 sidebar_position: 4
 ---
 
-![Version: 0.1.4-1](https://img.shields.io/badge/Version-0.1.4--1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) 
-![AppVersion: 0.1.4-1](https://img.shields.io/badge/AppVersion-0.1.4--1-informational?style=flat-square)
+# admission-controller
 
-[homepage](https://scribesecurity.com)
+![Version: 0.1.4-1](https://img.shields.io/badge/Version-0.1.4--1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.4-1](https://img.shields.io/badge/AppVersion-0.1.4--1-informational?style=flat-square)
 
-# Admission-controller
+**Homepage:** <https://scribesecurity.com>
+
+# Admission Controller
 The Scribe Admission Controller is a component in your Kubernetes cluster that enforces policy decisions to validate the integrity of your supply chain. <br />
 It does this by checking resources that are being created in the cluster against admission rules, which determine if the resources are allowed. <br />
 This document provides instructions for installing and integrating the admission controller in your cluster, including options for both Scribe service and OCI registry integration. <br />
 The admission controller is built with Helm and is supported by the Scribe security team. To enable the admission logic, simply add the `admission.scribe.dev/include` label to a namespace. <br />
 
 ## Evidence Collection and Signing
-The admission controller collects evidence of resources and uploads it to either Scribe service or OCI registry. 
+The admission controller collects evidence of resources and uploads it to either Scribe service or OCI registry.
 This evidence can be either signed (`attestations`) or unsigned (`statements`). <br />
 
 When resources are signed, the admission controller downloads the evidence and runs it through a validation flow that includes signature and identity checks as well as policies.
@@ -34,13 +35,13 @@ kubectl create namespace scribe
 
 >You can inspect the admission version by running the following command
  `helm search repo scribe/admission-controller`
- 
+
 2. Install the admission-controller:
 ```bash
 helm install admission-controller -n scribe scribe/admission-controller
 ```
 # Integration Options
-There are two integration options for the admission-controller: 
+There are two integration options for the admission-controller:
 - Scribe service integration
 - OCI registry integration
 
@@ -80,7 +81,7 @@ Using OCI registry as an evidence store allows you to upload and verify evidence
     - [oci-repo] is the URL of the OCI repository where all evidence will be uploaded.
     - For image targets only: Attach the evidence to the same repo as the uploaded image.
       Example: If you upload an image `example/my_image:latest`, read access is required for `example/my_image` (oci-repo).
-      
+     
 2. If [oci-repo] is a private registry, attach permissions to the admission with the following steps:
     1. Create a secret:
     ```
@@ -88,7 +89,7 @@ Using OCI registry as an evidence store allows you to upload and verify evidence
     ```
     > Note: The `oci-repo` must be hosted on the `oci-url` you're adding the secret to.
     Example: `oci-repo=my_org.jfrog.io/docker-public-local` while `oci-url=my_org.jfrog.io`
-      
+     
 3. Install admission with an OCI registry as the evidence store:
     ```
     helm install admission-controller scribe/admission-controller -n scribe \
@@ -229,25 +230,40 @@ The [Values](#Values) section describes the configuration options for this chart
 ## Valint configuration
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| config.admission.glob | list | `[]` None | Select admitted images by regex |
+| config.admission.glob | list | `[]` | Select admitted images by regex |
+| config.attest.cocosign.storer.OCI.enable | bool | `true` | OCI evidence enable |
+| config.attest.cocosign.storer.OCI.repo | string | `""` | OCI evidence repo location  |
+| config.attest.default | string | `"sigstore"` | Signature verification type |
 | config.context.name | string | `""` | Scribe Project Key |
-| imagePullSecrets | list | `[]` |  |
+| config.verify.input-format | string | `"attest"` | Evidence format |
+| imagePullSecrets | list | `[]` | OCI evidence store secret name |
 | scribe.auth.client_id | string | `""` | Scribe Client ID |
 | scribe.auth.client_secret | string | `""` | Scribe Client Secret |
-| scribe.service.enable | bool | `true` |  |
+| scribe.service.enable | bool | `false` | Scribe Client Enable |
 
 ## Other configurations
+## Values
+
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | commonNodeSelector | object | `{}` |  |
 | commonTolerations | list | `[]` |  |
+| config.admission.glob | list | `[]` | Select admitted images by regex |
+| config.attest.cocosign.storer.OCI.enable | bool | `true` |  |
+| config.attest.default | string | `"sigstore"` |  |
+| config.context.name | string | `""` | Scribe Project Key |
+| config.verify.input-format | string | `"attest"` | Evidence format |
+| imagePullSecrets | list | `[]` | OCI evidence store secret name |
+| scribe.auth.client_id | string | `""` | Scribe Client ID |
+| scribe.auth.client_secret | string | `""` | Scribe Client Secret |
+| scribe.service.enable | bool | `false` | Scribe Client Enable |
 | serviceMonitor.enabled | bool | `false` |  |
 | webhook.env | object | `{}` |  |
 | webhook.extraArgs.structured | bool | `true` |  |
 | webhook.extraArgs.verbose | int | `2` |  |
 | webhook.image.pullPolicy | string | `"IfNotPresent"` |  |
 | webhook.image.repository | string | `"scribesecuriy.jfrog.io/scribe-docker-public-local/valint"` |  |
-| webhook.image.version | string | `"v0.1.3-8-admission"` |  |
+| webhook.image.version | string | `"v0.1.4-1-admission"` |  |
 | webhook.name | string | `"webhook"` |  |
 | webhook.podSecurityContext.allowPrivilegeEscalation | bool | `false` |  |
 | webhook.podSecurityContext.capabilities.drop[0] | string | `"all"` |  |

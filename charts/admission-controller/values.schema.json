@@ -33,6 +33,9 @@
                                             "properties": {
                                                 "enable": {
                                                     "type": "boolean"
+                                                },
+                                                "repo": {
+                                                    "type": "string"
                                                 }
                                             }
                                         }

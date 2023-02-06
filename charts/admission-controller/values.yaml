@@ -48,6 +48,7 @@ scribe:
     # -- Scribe Client Secret
     client_secret: ""
   service:
+      # -- Scribe Client Enable
     enable: false
 
 config:
@@ -63,12 +64,15 @@ config:
     # -- Evidence format
     input-format: attest
   attest:
+    # -- Signature verification type
     default: sigstore
     cocosign:
       storer:
         OCI:
+          # -- OCI evidence enable
           enable: true
-          ## repo: <your repo>
+          # -- OCI evidence repo location 
+          repo: ""
 
 ## common node selector for all the pods
 commonNodeSelector: {}
