@@ -39,7 +39,7 @@ login:
 		--docker-server=$(REPO_URL) \
 		--docker-username=$(REPO_USERNAME) \
 		--docker-password=$(REPO_PASSWORD) \
-		-n $(NAMESPACE)
+		-n $(NAMESPACE) || true
 
 .PHONY: namespace
 install_namespace:  ## Create admission namespace
@@ -50,35 +50,57 @@ install: ## Install admission (release helm)
 	@helm install --devel --debug  \
 		--set scribe.auth.client_id=$(SCRIBE_CLIENT_ID) \
 		--set scribe.auth.client_secret=$(SCRIBE_CLIENT_SECRET) \
-		$(NAME) -n $(NAMESPACE) scribe/$(NAME)
+		$(NAME) -n $(NAMESPACE) scribe/$(NAME)  --devel
 
 .PHONY: install_local_scribe
 install_local_scribe:  ## Install admission with scribe
-	@helm install --debug  \
-		--set scribe.service.enable=true \
-		--set scribe.auth.client_id=$(SCRIBE_CLIENT_ID) \
-		--set scribe.auth.client_secret=$(SCRIBE_CLIENT_SECRET) \
-		$(NAME) -n $(NAMESPACE) ./charts/$(NAME) --devel
+	@if helm status $(NAME) -n $(NAMESPACE) > /dev/null 2>&1; then \
+		helm upgrade --debug --reset-values --force \
+			--set scribe.service.enable=true \
+			--set scribe.auth.client_id=$(SCRIBE_CLIENT_ID) \
+			--set scribe.auth.client_secret=$(SCRIBE_CLIENT_SECRET) \
+			$(NAME) -n $(NAMESPACE) ./charts/$(NAME) --devel; \
+	else \
+		helm install --debug  \
+			--set scribe.service.enable=true \
+			--set scribe.auth.client_id=$(SCRIBE_CLIENT_ID) \
+			--set scribe.auth.client_secret=$(SCRIBE_CLIENT_SECRET) \
+			$(NAME) -n $(NAMESPACE) ./charts/$(NAME) --devel; \
+	fi
+	@make upgrade_local_glob
 
 .PHONY: install_local_oci
 install_local_oci: login ## Install admission with oci
-	@helm install --debug  \
-		--set config.attest.cocosign.storer.OCI.enable=true \
-		--set config.attest.cocosign.storer.OCI.repo=${REPO_FULL} \
-		--set imagePullSecrets={$(REPO_SECRET_NAME)} \
-		$(NAME) -n $(NAMESPACE) ./charts/$(NAME) --devel
+	@if helm status $(NAME) -n $(NAMESPACE) > /dev/null 2>&1; then \
+		helm upgrade --debug --reset-values --force \
+			--set config.attest.cocosign.storer.OCI.enable=true \
+			--set config.attest.cocosign.storer.OCI.repo=${REPO_FULL} \
+			--set imagePullSecrets={$(REPO_SECRET_NAME)} \
+			$(NAME) -n $(NAMESPACE) ./charts/$(NAME) --devel; \
+	else \
+		helm install --debug \
+			--set config.attest.cocosign.storer.OCI.enable=true \
+			--set config.attest.cocosign.storer.OCI.repo=${REPO_FULL} \
+			--set imagePullSecrets={$(REPO_SECRET_NAME)} \
+			$(NAME) -n $(NAMESPACE) ./charts/$(NAME) --devel; \
+	fi
+	@make upgrade_local_glob
 
 .PHONY: upgrade_local_glob
 upgrade_local_glob:
-	@helm upgrade --debug \
+	@helm upgrade --debug --reuse-values \
 		--set config.admission.glob={\.\*nginx\.\*} \
-		$(NAME) -n $(NAMESPACE) ./charts/$(NAME) --devel
+		$(NAME) -n $(NAMESPACE) ./charts/$(NAME) --devel 
 
 .PHONY: upgrade_local_format
 upgrade_local_format:
-	@helm upgrade --debug \
+	@helm upgrade --debug --reuse-values \
 		--set config.verify.input-format=statement \
 		$(NAME) -n $(NAMESPACE) ./charts/$(NAME) --devel
+
+.PHONY: local_values
+local_values:
+	@helm get values --debug $(NAME) -n $(NAMESPACE)
 
 .PHONY: bootstrap
 bootstrap:
@@ -137,6 +159,8 @@ deny_test: ## Test admission
 	@kubectl label namespace test admission.scribe.dev/include=true
 	@kubectl apply -f charts/admission-controller/examples/deny_deployment.yaml -n test
 
+upload_oci_nginx:
+	valint nginx:1.14.2 -f --oci --oci-repo scribesecuriy.jfrog.io/scribe-docker-local/attestation -o statement
 
 .PHONY: clean_test
 clean_test: ## Clean test admission

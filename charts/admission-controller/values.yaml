@@ -4,7 +4,7 @@ webhook:
   name: webhook
   image:
     repository: scribesecuriy.jfrog.io/scribe-docker-public-local/valint
-    version: v0.1.4-1-admission
+    version: v0.1.5-1-admission
     pullPolicy: IfNotPresent
   env: {}
   extraArgs:
@@ -70,7 +70,7 @@ config:
       storer:
         OCI:
           # -- OCI evidence enable
-          enable: true
+          enable: false
           # -- OCI evidence repo location 
           repo: ""
 
