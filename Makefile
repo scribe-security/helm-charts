@@ -26,15 +26,17 @@ define title
     @printf '$(TITLE)$(1)$(RESET)\n'
 endef
 
+
 include env
 
 ## Tasks
 .PHONY: help
 help:
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "$(BOLD)$(CYAN)%-25s$(RESET)%s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' Makefile | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "$(BOLD)$(CYAN)%-25s$(RESET)%s\n", $$1, $$2}'
+
 
 .PHONY: login
-login:
+login: ## Add Image Registry secret
 	kubectl create secret docker-registry $(REPO_SECRET_NAME) \
 		--docker-server=$(REPO_URL) \
 		--docker-username=$(REPO_USERNAME) \
@@ -42,7 +44,7 @@ login:
 		-n $(NAMESPACE) || true
 
 .PHONY: namespace
-install_namespace:  ## Create admission namespace
+install_namespace:  ## Install Namespace
 	@kubectl create namespace $(NAMESPACE)
 
 .PHONY: install
@@ -98,8 +100,8 @@ upgrade_local_format:
 		--set config.verify.input-format=statement \
 		$(NAME) -n $(NAMESPACE) ./charts/$(NAME) --devel
 
-.PHONY: local_values
-local_values:
+.PHONY: show_values
+show_values:
 	@helm get values --debug $(NAME) -n $(NAMESPACE)
 
 .PHONY: bootstrap
@@ -147,25 +149,32 @@ clean: ## Uninstall admission
 	@helm uninstall $(NAME) --debug -n $(NAMESPACE) || true
 	$(shell kubectl --namespace $(NAMESPACE) delete "$$(kubectl api-resources --namespaced=true --verbs=delete -o name | tr '\n' ',' | sed -e 's/,$$//')" --all)  || true
 
-.PHONY: test
-accept_test: ## Test admission
+.PHONY: accept_test
+accept_test: ## Accept test 
 	@kubectl create namespace test || true
 	@kubectl label namespace test admission.scribe.dev/include=true
 	@kubectl apply -f charts/admission-controller/examples/accept_deployment.yaml -n test
 
-.PHONY: test
-deny_test: ## Test admission
+.PHONY: deny_test
+deny_test: ## Deny test
 	@kubectl create namespace test || true
 	@kubectl label namespace test admission.scribe.dev/include=true
 	@kubectl apply -f charts/admission-controller/examples/deny_deployment.yaml -n test
 
-upload_oci_nginx:
-	valint nginx:1.14.2 -f --oci --oci-repo scribesecuriy.jfrog.io/scribe-docker-local/attestation -o statement
+.PHONY: upload_oci_nginx
+upload_oci_nginx: ## Upload Accepted image to OCI storer
+	valint bom nginx:1.14.2 -f --oci --oci-repo scribesecuriy.jfrog.io/scribe-docker-local/attestation -o statement
+
+.PHONY: upload_scribe_nginx
+upload_scribe_nginx: ## Upload Accepted Attest, image to Scribe storer
+	valint bom nginx:1.14.2 -f -E -o attest --scribe.client-id $(SCRIBE_CLIENT_ID) --scribe.client-secret $(SCRIBE_CLIENT_SECRET)  
+
+##--scribe.url $(SCRIBE_URL) --scribe.login-url $(SCRIBE_LOGIN_URL) --scribe.auth.audience $(SCRIBE_AUDIENCE)
 
 .PHONY: clean_test
 clean_test: ## Clean test admission
 	@kubectl delete -f charts/admission-controller/examples/accept_deployment.yaml -n test || true
-	@kubectl delete -f charts/admission-controller/examples/deny_deployment.yaml -n test || true
+	# @kubectl delete -f charts/admission-controller/examples/deny_deployment.yaml -n test || true
 
 
 .PHONY: sync_pre_release
@@ -175,3 +184,28 @@ sync_pre_release:
 
 list_vesrsions:
 	helm search repo scribe/admission-controller --devel --versions
+
+
+## DEMO
+## 1) Prepare cluster
+## make install_minikube
+## Or other cluster.
+
+## 2) Install Namespace for scribe admission (Once per cluster)
+## make install_namespace.
+
+## 3) Install scribe admission using Scribe Store.
+## make install_local_scribe
+## Verify values using `make show_values`
+
+## OR OCI `make install_local_oci`
+
+## 4) Upload Nginx to Scribe.
+## make upload_scribe_nginx
+## OR OCI `make upload_oci_nginx`
+
+## 5) Show Deny and Accept tests.
+## make deny_test
+## make accept_test
+
+### To clean admission for reinstall a new version please run `make clean`
