@@ -9,8 +9,8 @@ sources:
 type: application
 
 name: admission-controller
-version: 0.1.4-1
-appVersion: 0.1.4-1
+version: 0.1.5-15
+appVersion: 0.1.5-15
 icon: https://raw.githubusercontent.com/scribe-security/misc/master/assets/logo-white.jpg
 
 maintainers:
