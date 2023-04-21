@@ -163,11 +163,20 @@ deny_test: ## Deny test
 
 .PHONY: upload_oci_nginx
 upload_oci_nginx: ## Upload Accepted image to OCI storer
-	valint bom nginx:1.14.2 -f --oci --oci-repo scribesecuriy.jfrog.io/scribe-docker-local/attestation -o statement
+	valint bom nginx:1.14.0 -f --oci --oci-repo scribesecuriy.jfrog.io/scribe-docker-local/attestation -o statement 
+
+.PHONY: verify_oci_nginx
+verify_oci_nginx: ## Upload Accepted image to OCI storer
+	valint verify nginx:1.14.0 -f --oci --oci-repo scribesecuriy.jfrog.io/scribe-docker-local/attestation -i statement 
 
 .PHONY: upload_scribe_nginx
 upload_scribe_nginx: ## Upload Accepted Attest, image to Scribe storer
-	valint bom nginx:1.14.2 -f -E -o attest --scribe.client-id $(SCRIBE_CLIENT_ID) --scribe.client-secret $(SCRIBE_CLIENT_SECRET)  
+	valint bom nginx:1.14.0 -f -E -o attest --scribe.client-id $(SCRIBE_CLIENT_ID) --scribe.client-secret $(SCRIBE_CLIENT_SECRET) --product-key nginx0-helm-demo --components metadata
+
+.PHONY: verify_scribe_nginx
+verify_scribe_nginx: ## Upload Accepted Attest, image to Scribe storer
+	valint verify nginx:1.14.0 -E -i attest --scribe.client-id $(SCRIBE_CLIENT_ID) --scribe.client-secret $(SCRIBE_CLIENT_SECRET) --product-key nginx0-helm-demo
+
 
 ##--scribe.url $(SCRIBE_URL) --scribe.login-url $(SCRIBE_LOGIN_URL) --scribe.auth.audience $(SCRIBE_AUDIENCE)
 
@@ -195,14 +204,18 @@ list_vesrsions:
 ## make install_namespace.
 
 ## 3) Install scribe admission using Scribe Store.
-## make install_local_scribe
+## `make install_local_scribe` For Scribe
+## `make install_local_oci` For OCI
 ## Verify values using `make show_values`
 
-## OR OCI `make install_local_oci`
-
-## 4) Upload Nginx to Scribe.
+## 4) Upload Nginx to store.
 ## make upload_scribe_nginx
-## OR OCI `make upload_oci_nginx`
+## `make upload_scribe_nginx` For Scribe
+## `make upload_oci_nginx` For OCI
+
+## 5) Local test
+## `make verify_scribe_nginx`  For Scribe
+## `make verify_oci_nginx`  For OCI
 
 ## 5) Show Deny and Accept tests.
 ## make deny_test
