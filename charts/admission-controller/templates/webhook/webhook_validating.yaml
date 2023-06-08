@@ -16,5 +16,5 @@ webhooks:
       name: webhook
       namespace: {{ .Release.Namespace }}
   failurePolicy: Fail
-  timeoutSeconds: 30
+  timeoutSeconds: 120
   sideEffects: None
