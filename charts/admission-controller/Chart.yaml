@@ -9,8 +9,8 @@ sources:
 type: application
 
 name: admission-controller
-version: 0.2.1-8
-appVersion: 0.2.1-8
+version: 0.2.1-9
+appVersion: 0.2.1-9
 icon: https://raw.githubusercontent.com/scribe-security/misc/master/assets/logo-white.jpg
 
 maintainers:
@@ -20,5 +20,5 @@ annotations:
   artifacthub.io/license: Apache-2.0
   artifacthub.io/images: |
     - name: admission-controller
-      image: scribesecuriy.jfrog.io/scribe-docker-public-local/valint@sha256:f27e7b9ad3221329e0dd09b6511b62257ac833b0cae6dbc188c6bd1a2bcd7175
+      image: scribesecuriy.jfrog.io/scribe-docker-public-local/valint@sha256:eb9ad332f941df49f69ae3b9595f334f55078e1d546e1b68a0212d8af7192627
     
