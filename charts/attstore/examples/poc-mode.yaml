@@ -1,0 +1,23 @@
+# Example: Proof-of-Concept Mode
+# Quick start configuration for testing and development
+
+# Use default PoC values - just customize access method
+
+service:
+  type: NodePort
+  nodePort: 30503  # Access on any cluster node at port 30503
+
+# Optional: Add resource limits for shared dev clusters
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 50m
+    memory: 128Mi
+
+# All other settings use defaults from values.yaml:
+# - SQLite database
+# - Local file storage (10Gi PVC)
+# - 1 replica
+# - No PostgreSQL or MinIO

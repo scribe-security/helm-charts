@@ -1,0 +1,17 @@
+{{- if and .Values.database.postgresql.enabled .Values.pgbouncer.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "attstore.pgbouncer.fullname" . }}
+  labels:
+    {{- include "attstore.pgbouncer.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+  - port: 6432
+    targetPort: 6432
+    protocol: TCP
+    name: pgbouncer
+  selector:
+    {{- include "attstore.pgbouncer.selectorLabels" . | nindent 4 }}
+{{- end }}

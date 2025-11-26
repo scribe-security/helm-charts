@@ -1,0 +1,17 @@
+{{- if .Values.database.postgresql.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "attstore.postgresql.fullname" . }}
+  labels:
+    {{- include "attstore.postgresql.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.database.postgresql.port }}
+      targetPort: postgresql
+      protocol: TCP
+      name: postgresql
+  selector:
+    {{- include "attstore.postgresql.selectorLabels" . | nindent 4 }}
+{{- end }}
