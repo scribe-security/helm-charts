@@ -8,7 +8,7 @@ replicaCount: 1
 image:
   repository: ghcr.io/scribe-security/attstore
   pullPolicy: IfNotPresent
-  tag: "1.4.0"
+  tag: "1.4.1"
 
 imagePullSecrets: []
 nameOverride: ""
@@ -207,7 +207,7 @@ database:
     # PostgreSQL StatefulSet configuration
     image:
       repository: postgres
-      tag: "1.4.0"
+      tag: "15"
       pullPolicy: IfNotPresent
     
     # Persistence for PostgreSQL

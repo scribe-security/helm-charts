@@ -52,21 +52,23 @@ Complete self-contained deployment suitable for production on-premises environme
 
 **Installation:**
 ```bash
-# Install from Scribe repository
-helm install attstore scribe/attstore -f scribe/attstore/values-production.yaml \
-  --set config.sessionSecret="$(openssl rand -base64 32)" \
-  --set config.jwtSecretKey="$(openssl rand -base64 32)" \
-  --set config.admin.password="YourSecurePassword" \
-  --set ingress.hosts[0].host="attstore.yourdomain.com" \
-  --set ingress.tls[0].hosts[0]="attstore.yourdomain.com"
+# First, fetch the chart to get values files
+helm pull scribe/attstore --untar
+
+# Install with production values
+helm install attstore scribe/attstore \
+  -f attstore/values-production.yaml \
+  --set database.postgresql.password="change-me-db-password" \
+  --set config.sessionSecret="my-session-secret-change-in-production" \
+  --set config.jwtSecretKey="my-jwt-secret-change-in-production" \
+  --set config.admin.password="SecurePassword123"
 
 # Or from local directory (development)
 helm install attstore ./attstore -f values-production.yaml \
-  --set config.sessionSecret="$(openssl rand -base64 32)" \
-  --set config.jwtSecretKey="$(openssl rand -base64 32)" \
-  --set config.admin.password="YourSecurePassword" \
-  --set ingress.hosts[0].host="attstore.yourdomain.com" \
-  --set ingress.tls[0].hosts[0]="attstore.yourdomain.com"
+  --set database.postgresql.password="change-me-db-password" \
+  --set config.sessionSecret="my-session-secret-change-in-production" \
+  --set config.jwtSecretKey="my-jwt-secret-change-in-production" \
+  --set config.admin.password="SecurePassword123"
 ```
 
 ### 3. AWS Deployment Mode
@@ -87,16 +89,20 @@ Cloud-native deployment using AWS managed services.
 ```bash
 # Prerequisites: Create RDS instance, S3 bucket, and IAM role for IRSA
 
-# Install from Scribe repository
-helm install attstore scribe/attstore -f scribe/attstore/values-aws.yaml \
+# First, fetch the chart to get values files
+helm pull scribe/attstore --untar
+
+# Install with AWS values
+helm install attstore scribe/attstore \
+  -f attstore/values-aws.yaml \
   --set serviceAccount.annotations."eks\.amazonaws\.io/role-arn"="arn:aws:iam::ACCOUNT_ID:role/attstore-s3-access" \
   --set storage.cloudStorage.aws.bucket="my-attstore-bucket" \
   --set storage.cloudStorage.aws.region="us-east-1" \
   --set database.externalDatabase.host="mydb.xxxx.us-east-1.rds.amazonaws.com" \
   --set database.externalDatabase.password="RDSPassword" \
-  --set config.sessionSecret="$(openssl rand -base64 32)" \
-  --set config.jwtSecretKey="$(openssl rand -base64 32)" \
-  --set config.admin.password="YourSecurePassword"
+  --set config.sessionSecret="my-session-secret-change-in-production" \
+  --set config.jwtSecretKey="my-jwt-secret-change-in-production" \
+  --set config.admin.password="SecurePassword123"
 
 # Or from local directory (development)
 helm install attstore ./attstore -f values-aws.yaml \
@@ -105,9 +111,9 @@ helm install attstore ./attstore -f values-aws.yaml \
   --set storage.cloudStorage.aws.region="us-east-1" \
   --set database.externalDatabase.host="mydb.xxxx.us-east-1.rds.amazonaws.com" \
   --set database.externalDatabase.password="RDSPassword" \
-  --set config.sessionSecret="$(openssl rand -base64 32)" \
-  --set config.jwtSecretKey="$(openssl rand -base64 32)" \
-  --set config.admin.password="YourSecurePassword"
+  --set config.sessionSecret="my-session-secret-change-in-production" \
+  --set config.jwtSecretKey="my-jwt-secret-change-in-production" \
+  --set config.admin.password="SecurePassword123"
 ```
 
 ## Installation
@@ -142,15 +148,13 @@ All configuration is done via the `values.yaml` file or `--set` flags. See [Conf
 **⚠️ CRITICAL:** Always set these values for production deployments:
 
 ```bash
---set config.sessionSecret="your-session-secret"
---set config.jwtSecretKey="your-jwt-secret"
---set config.admin.password="your-admin-password"
+--set database.postgresql.password="change-me-db-password"
+--set config.sessionSecret="your-session-secret-change-me"
+--set config.jwtSecretKey="your-jwt-secret-change-me"
+--set config.admin.password="YourSecurePassword123"
 ```
 
-Generate secure random secrets:
-```bash
-openssl rand -base64 32
-```
+**Note:** Replace these example values with your own secure secrets in production.
 
 ## Configuration Reference
 
@@ -267,28 +271,110 @@ helm install attstore scribe/attstore \
 ### Example 2: Production with Custom Storage Class
 
 ```bash
+# Fetch the chart first
+helm pull scribe/attstore --untar
+
+# Install with custom storage classes
 helm install attstore scribe/attstore \
   --version 1.0.0 \
-  -f https://raw.githubusercontent.com/scribe-security/attstore/main/helm/attstore/values-production.yaml \
+  -f attstore/values-production.yaml \
+  --set database.postgresql.password="change-me-db-password" \
   --set database.postgresql.persistence.storageClass="fast-ssd" \
   --set minio.persistence.storageClass="standard" \
-  --set config.sessionSecret="$(openssl rand -base64 32)" \
-  --set config.jwtSecretKey="$(openssl rand -base64 32)" \
+  --set config.sessionSecret="my-session-secret-change-in-production" \
+  --set config.jwtSecretKey="my-jwt-secret-change-in-production" \
   --set config.admin.password="SecurePassword123"
 ```
 
-### Example 3: AWS with External Secrets
+### Example 3: AWS with S3 and RDS
 
-```yaml
-# Using external-secrets operator to fetch from AWS Secrets Manager
-# Create a SecretStore and ExternalSecret, then reference in values
+```bash
+# Fetch the chart first
+helm pull scribe/attstore --untar
 
+# Install with AWS values
 helm install attstore scribe/attstore \
-  -f https://raw.githubusercontent.com/scribe-security/attstore/main/helm/attstore/values-aws.yaml \
+  -f attstore/values-aws.yaml \
   --set database.externalDatabase.host="mydb.xyz.us-east-1.rds.amazonaws.com" \
+  --set database.externalDatabase.password="RDSPassword" \
   --set storage.cloudStorage.aws.bucket="my-bucket" \
-  --set storage.cloudStorage.aws.region="us-east-1"
+  --set storage.cloudStorage.aws.region="us-east-1" \
+  --set config.sessionSecret="my-session-secret-change-in-production" \
+  --set config.jwtSecretKey="my-jwt-secret-change-in-production" \
+  --set config.admin.password="SecurePassword123"
 ```
+
+## Advanced Configuration
+
+### Ingress Setup
+
+Ingress configuration is the responsibility of your organization and depends on your existing ingress controller (nginx, Traefik, AWS ALB, etc.).
+
+**Example with nginx-ingress:**
+
+```bash
+# Fetch the chart first
+helm pull scribe/attstore --untar
+
+# Install with ingress enabled
+helm install attstore scribe/attstore \
+  -f attstore/values-production.yaml \
+  --set database.postgresql.password="change-me-db-password" \
+  --set config.sessionSecret="my-session-secret-change-in-production" \
+  --set config.jwtSecretKey="my-jwt-secret-change-in-production" \
+  --set config.admin.password="SecurePassword123" \
+  --set ingress.enabled=true \
+  --set ingress.className="nginx" \
+  --set 'ingress.hosts[0].host=attstore.yourdomain.com' \
+  --set 'ingress.hosts[0].paths[0].path=/' \
+  --set 'ingress.hosts[0].paths[0].pathType=Prefix'
+```
+
+**Example with TLS/HTTPS:**
+
+```bash
+helm install attstore scribe/attstore \
+  -f attstore/values-production.yaml \
+  --set database.postgresql.password="change-me-db-password" \
+  --set config.sessionSecret="my-session-secret-change-in-production" \
+  --set config.jwtSecretKey="my-jwt-secret-change-in-production" \
+  --set config.admin.password="SecurePassword123" \
+  --set ingress.enabled=true \
+  --set ingress.className="nginx" \
+  --set 'ingress.hosts[0].host=attstore.yourdomain.com' \
+  --set 'ingress.hosts[0].paths[0].path=/' \
+  --set 'ingress.hosts[0].paths[0].pathType=Prefix' \
+  --set 'ingress.tls[0].secretName=attstore-tls' \
+  --set 'ingress.tls[0].hosts[0]=attstore.yourdomain.com'
+```
+
+**Note:** Ensure your TLS certificate exists as a Kubernetes secret or use cert-manager to automatically provision certificates.
+
+### PgBouncer Connection Pooling
+
+PgBouncer is optional and only needed for high-scale deployments (10+ replicas or 100+ concurrent connections). 
+**Not needed for AWS RDS** (use RDS Proxy instead if needed).
+
+```bash
+# Fetch the chart first
+helm pull scribe/attstore --untar
+
+# Enable PgBouncer in production mode
+helm install attstore scribe/attstore \
+  -f attstore/values-production.yaml \
+  --set pgbouncer.enabled=true \
+  --set database.postgresql.password="change-me-db-password" \
+  --set config.sessionSecret="my-session-secret-change-in-production" \
+  --set config.jwtSecretKey="my-jwt-secret-change-in-production" \
+  --set config.admin.password="SecurePassword123"
+
+# The app will automatically connect through PgBouncer instead of directly to PostgreSQL
+```
+
+When enabled, PgBouncer sits between your app pods and PostgreSQL, pooling connections:
+- Default pool size: 20 connections to PostgreSQL
+- Max client connections: 600
+- Pool mode: transaction (best for most web apps)
 
 ## Upgrading
 
@@ -302,9 +388,10 @@ helm upgrade attstore scribe/attstore
 # Upgrade with specific version
 helm upgrade attstore scribe/attstore --version 1.2.3
 
-# Upgrade with custom values
+# Upgrade with custom values (fetch chart first for values files)
+helm pull scribe/attstore --untar
 helm upgrade attstore scribe/attstore \
-  -f https://raw.githubusercontent.com/scribe-security/attstore/main/helm/attstore/values-production.yaml
+  -f attstore/values-production.yaml
 
 # Upgrade with specific changes
 helm upgrade attstore scribe/attstore \
@@ -385,9 +472,9 @@ helm lint ./attstore
 # Dry run installation
 helm install attstore scribe/attstore --dry-run --debug
 
-# Template rendering
+# Template rendering with production values
 helm template attstore scribe/attstore \
-  -f https://raw.githubusercontent.com/scribe-security/attstore/main/helm/attstore/values-production.yaml > output.yaml
+  -f attstore/values-production.yaml > output.yaml
 ```
 
 ### Packaging
