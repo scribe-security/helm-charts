@@ -1,0 +1,76 @@
+name: Auto Release Charts
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - master
+    paths:
+      - 'charts/**/Chart.yaml'
+
+permissions:
+  contents: write
+  packages: write
+  pull-requests: read
+
+jobs:
+  auto-tag-and-release:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: master
+
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Detect changed charts and create tags
+        id: detect-changes
+        run: |
+          # Get the list of changed Chart.yaml files in the PR
+          CHANGED_CHARTS=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.merge_commit_sha }} | grep 'charts/.*/Chart.yaml' || true)
+          
+          if [ -z "$CHANGED_CHARTS" ]; then
+            echo "No Chart.yaml files changed"
+            echo "charts_changed=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          echo "charts_changed=true" >> $GITHUB_OUTPUT
+          
+          # For each changed chart, extract name and version, then create tag
+          for chart_file in $CHANGED_CHARTS; do
+            chart_dir=$(dirname "$chart_file")
+            chart_name=$(yq eval '.name' "$chart_file")
+            chart_version=$(yq eval '.version' "$chart_file")
+            
+            tag_name="${chart_name}-${chart_version}"
+            
+            echo "Chart: $chart_name, Version: $chart_version, Tag: $tag_name"
+            
+            # Check if tag already exists
+            if git rev-parse "$tag_name" >/dev/null 2>&1; then
+              echo "Tag $tag_name already exists, skipping"
+            else
+              echo "Creating tag $tag_name"
+              git tag -a "$tag_name" -m "Release $chart_name version $chart_version"
+              git push origin "$tag_name"
+            fi
+          done
+
+      - name: Install yq
+        if: steps.detect-changes.outputs.charts_changed == 'true'
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Wait for release workflow
+        if: steps.detect-changes.outputs.charts_changed == 'true'
+        run: |
+          echo "Tags created. The release workflow will be triggered automatically."
+          echo "Check the Actions tab for the 'release' workflow run."
