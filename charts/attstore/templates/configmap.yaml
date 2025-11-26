@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "attstore.fullname" . }}
+  labels:
+    {{- include "attstore.labels" . | nindent 4 }}
+data:
+  PORT: {{ .Values.config.port | quote }}
+  STORAGE_TYPE: {{ .Values.storage.type | quote }}
+  {{- if eq .Values.storage.type "FILE_MOUNT" }}
+  FILE_STORAGE_PATH: {{ .Values.storage.fileMount.path | quote }}
+  FILE_STORAGE_BASE_URL: {{ include "attstore.fileStorageBaseUrl" . | quote }}
+  {{- else if eq .Values.storage.type "CLOUD_STORAGE" }}
+  CLOUD_STORAGE_PROVIDER: {{ .Values.storage.cloudStorage.provider | quote }}
+  {{- if eq .Values.storage.cloudStorage.provider "AWS" }}
+  AWS_DEFAULT_REGION: {{ .Values.storage.cloudStorage.aws.region | quote }}
+  {{- if .Values.storage.cloudStorage.aws.bucket }}
+  S3_BUCKET: {{ .Values.storage.cloudStorage.aws.bucket | quote }}
+  {{- end }}
+  {{- else if eq .Values.storage.cloudStorage.provider "MINIO" }}
+  MINIO_ENDPOINT: {{ include "attstore.minioEndpoint" . | quote }}
+  {{- if .Values.storage.cloudStorage.minio.bucket }}
+  MINIO_BUCKET: {{ .Values.storage.cloudStorage.minio.bucket | quote }}
+  {{- else if .Values.minio.enabled }}
+  MINIO_BUCKET: {{ .Values.minio.bucket | quote }}
+  {{- end }}
+  MINIO_SECURE: {{ .Values.storage.cloudStorage.minio.secure | quote }}
+  {{- end }}
+  {{- end }}
+  PRESIGNED_URL_EXPIRATION: {{ .Values.config.presignedUrlExpiration | quote }}
+  SYSLOG_FACILITY: {{ .Values.config.syslog.facility | quote }}
+  SYSLOG_HOSTNAME: {{ .Values.config.syslog.hostname | quote }}
+  SYSLOG_APP_NAME: {{ .Values.config.syslog.appName | quote }}
+  DEFAULT_ADMIN_USERNAME: {{ .Values.config.admin.username | quote }}
+  DEFAULT_ADMIN_EMAIL: {{ .Values.config.admin.email | quote }}
+  PYTHONUNBUFFERED: "1"

@@ -1,0 +1,302 @@
+# Default values for attstore - Proof of Concept Mode
+# This configuration provides a minimal setup with SQLite and local file storage
+# Suitable for testing, development, and demos
+
+# Number of replicas (PoC mode: 1 replica)
+replicaCount: 1
+
+image:
+  repository: ghcr.io/scribe-security/attstore
+  pullPolicy: IfNotPresent
+  tag: "1.3.0"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+# Service account configuration
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account (for AWS IRSA, add eks.amazonaws.com/role-arn)
+  annotations: {}
+  # The name of the service account to use
+  name: ""
+
+# Pod annotations
+podAnnotations: {}
+
+# Pod security context
+podSecurityContext:
+  fsGroup: 1000
+
+# Container security context
+securityContext:
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: false
+  runAsNonRoot: true
+  runAsUser: 1000
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 5003
+  targetPort: 5003
+  # For PoC mode, you can change to NodePort for easy access
+  # type: NodePort
+  # nodePort: 30503
+
+# Ingress configuration
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: attstore.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+  #  - secretName: attstore-tls
+  #    hosts:
+  #      - attstore.local
+
+# Resource limits and requests
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+
+# Liveness and readiness probes
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: 5003
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /healthz
+    port: 5003
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+# Autoscaling (disabled by default)
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+# Node selector
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity rules
+affinity: {}
+
+# Pod disruption budget (disabled for PoC mode)
+podDisruptionBudget:
+  enabled: false
+  minAvailable: 1
+
+# Application configuration
+config:
+  # Port for the application
+  port: 5003
+  
+  # Session secret - will be auto-generated if not provided
+  # For production, set a strong secret value
+  sessionSecret: ""
+  
+  # JWT secret key - will be auto-generated if not provided
+  # For production, set a strong secret value
+  jwtSecretKey: ""
+  
+  # Default admin credentials
+  admin:
+    username: "admin"
+    password: "admin#admin"  # Change immediately in production
+    email: "admin@example.com"
+  
+  # Syslog configuration
+  syslog:
+    facility: "16"
+    hostname: "attestation-store"
+    appName: "attestation-store"
+  
+  # Presigned URL expiration (seconds)
+  presignedUrlExpiration: "3600"
+
+# Storage configuration
+storage:
+  # Storage type: FILE_MOUNT or CLOUD_STORAGE
+  type: FILE_MOUNT
+  
+  # File mount storage settings (for PoC mode)
+  fileMount:
+    # Path inside container
+    path: /app/storage
+    # Base URL for download links (will be auto-generated based on service if not set)
+    baseUrl: ""
+  
+  # Persistence for local storage (PoC mode)
+  persistence:
+    enabled: true
+    # storageClass: ""  # Use cluster default
+    accessMode: ReadWriteOnce
+    size: 10Gi
+    # existingClaim: ""  # Use existing PVC
+  
+  # Cloud storage settings (disabled in PoC mode)
+  cloudStorage:
+    provider: AWS  # AWS or MINIO
+    
+    # AWS S3 configuration
+    aws:
+      accessKeyId: ""
+      secretAccessKey: ""
+      sessionToken: ""
+      region: "us-east-1"
+      bucket: ""
+    
+    # MinIO configuration
+    minio:
+      endpoint: ""
+      accessKey: ""
+      secretKey: ""
+      bucket: ""
+      secure: "true"
+
+# Database configuration
+database:
+  # Database type: sqlite or postgresql
+  type: sqlite
+  
+  # SQLite configuration (default for PoC mode)
+  sqlite:
+    # Database will be stored in persistence volume
+    path: /app/instance/attestation_store.db
+  
+  # PostgreSQL configuration (disabled by default)
+  postgresql:
+    enabled: false
+    
+    # PostgreSQL connection details (when using bundled PostgreSQL)
+    host: attstore-postgresql
+    port: 5432
+    database: attstoredb
+    username: attstoreuser
+    password: ""  # Will be auto-generated if not provided
+    
+    # PostgreSQL StatefulSet configuration
+    image:
+      repository: postgres
+      tag: "1.3.0"
+      pullPolicy: IfNotPresent
+    
+    # Persistence for PostgreSQL
+    persistence:
+      enabled: true
+      # storageClass: ""
+      accessMode: ReadWriteOnce
+      size: 20Gi
+    
+    # Resources for PostgreSQL
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+  
+  # External database configuration (for AWS/external PostgreSQL)
+  externalDatabase:
+    enabled: false
+    # Full connection string or individual components
+    url: ""
+    # Or provide individual components:
+    host: ""
+    port: 5432
+    database: ""
+    username: ""
+    password: ""
+    # For AWS RDS, you might use IAM authentication
+    useIAM: false
+
+# MinIO object storage (disabled by default)
+minio:
+  enabled: false
+  
+  image:
+    repository: minio/minio
+    tag: latest
+    pullPolicy: IfNotPresent
+  
+  # MinIO credentials (will be auto-generated if not provided)
+  rootUser: minioadmin
+  rootPassword: ""
+  
+  # Bucket name
+  bucket: attstorebucket
+  
+  # Service configuration
+  service:
+    type: ClusterIP
+    port: 9000
+    consolePort: 9001
+  
+  # Persistence for MinIO
+  persistence:
+    enabled: true
+    # storageClass: ""
+    accessMode: ReadWriteOnce
+    size: 50Gi
+  
+  # Resources for MinIO
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+
+# PgBouncer configuration (optional connection pooler)
+pgbouncer:
+  enabled: false
+  
+  image:
+    repository: edoburu/pgbouncer
+    tag: latest
+    pullPolicy: IfNotPresent
+  
+  # Pool configuration
+  poolMode: transaction
+  maxClientConn: 600
+  defaultPoolSize: 20
+  
+  # Resources
+  resources:
+    limits:
+      cpu: 500m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi

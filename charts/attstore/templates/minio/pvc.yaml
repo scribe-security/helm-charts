@@ -1,0 +1,17 @@
+{{- if and .Values.minio.enabled .Values.minio.persistence.enabled -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "attstore.minio.fullname" . }}
+  labels:
+    {{- include "attstore.minio.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - {{ .Values.minio.persistence.accessMode }}
+  {{- if .Values.minio.persistence.storageClass }}
+  storageClassName: {{ .Values.minio.persistence.storageClass | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.minio.persistence.size }}
+{{- end }}

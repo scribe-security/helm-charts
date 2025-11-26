@@ -1,0 +1,243 @@
+# Production values for attstore - Stand-Alone Full System
+# This configuration provides a complete self-contained deployment with PostgreSQL and MinIO
+# Suitable for production on-premises deployments
+
+replicaCount: 2
+
+image:
+  repository: ghcr.io/scribe-security/attstore
+  pullPolicy: IfNotPresent
+  tag: "1.3.0"
+
+imagePullSecrets: []
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext:
+  fsGroup: 1000
+
+securityContext:
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: false
+  runAsNonRoot: true
+  runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 5003
+  targetPort: 5003
+  # For cloud deployments, consider LoadBalancer:
+  # type: LoadBalancer
+  # For simple access without ingress:
+  # type: NodePort
+  # nodePort: 30503
+
+# Ingress is optional - disabled by default
+# Most users will use: kubectl port-forward, NodePort, or LoadBalancer
+# Enable only if you need domain-based routing or TLS termination
+ingress:
+  enabled: false
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+  hosts:
+    - host: attstore.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: attstore-tls
+      hosts:
+        - attstore.example.com
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 250m
+    memory: 512Mi
+
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: 5003
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /healthz
+    port: 5003
+  initialDelaySeconds: 10
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+# Optional autoscaling
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Enable pod disruption budget for production
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+config:
+  port: 5003
+  # Generate strong secrets for production - DO NOT use defaults
+  sessionSecret: ""  # Set via --set or sealed-secrets
+  jwtSecretKey: ""   # Set via --set or sealed-secrets
+  
+  admin:
+    username: "admin"
+    password: ""  # Set via --set or sealed-secrets - DO NOT use default
+    email: "admin@example.com"
+  
+  syslog:
+    facility: "16"
+    hostname: "attestation-store"
+    appName: "attestation-store"
+  
+  presignedUrlExpiration: "3600"
+
+# Use MinIO for object storage
+storage:
+  type: CLOUD_STORAGE
+  
+  fileMount:
+    path: /app/storage
+    baseUrl: ""
+  
+  persistence:
+    enabled: false  # Not needed when using cloud storage
+  
+  cloudStorage:
+    provider: MINIO
+    
+    aws:
+      accessKeyId: ""
+      secretAccessKey: ""
+      sessionToken: ""
+      region: "us-east-1"
+      bucket: ""
+    
+    minio:
+      endpoint: ""  # Auto-generated from service
+      accessKey: ""  # Will use MinIO root credentials
+      secretKey: ""  # Will use MinIO root credentials
+      bucket: ""     # Will use minio.bucket value
+      secure: "false"  # Set to "true" if MinIO has TLS
+
+# Use PostgreSQL for database
+database:
+  type: postgresql
+  
+  sqlite:
+    path: /app/instance/attestation_store.db
+  
+  # Enable bundled PostgreSQL
+  postgresql:
+    enabled: true
+    
+    host: ""  # Auto-generated
+    port: 5432
+    database: attstoredb
+    username: attstoreuser
+    password: ""  # Will be auto-generated - retrieve from secret
+    
+    image:
+      repository: postgres
+      tag: "1.3.0"
+      pullPolicy: IfNotPresent
+    
+    persistence:
+      enabled: true
+      # storageClass: "fast-ssd"  # Set for production
+      accessMode: ReadWriteOnce
+      size: 20Gi
+    
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+      requests:
+        cpu: 500m
+        memory: 512Mi
+  
+  externalDatabase:
+    enabled: false
+
+# Enable MinIO
+minio:
+  enabled: true
+  
+  image:
+    repository: minio/minio
+    tag: latest
+    pullPolicy: IfNotPresent
+  
+  rootUser: minioadmin
+  rootPassword: ""  # Will be auto-generated - retrieve from secret
+  
+  bucket: attstorebucket
+  
+  service:
+    type: ClusterIP
+    port: 9000
+    consolePort: 9001
+  
+  persistence:
+    enabled: true
+    # storageClass: "fast-ssd"  # Set for production
+    accessMode: ReadWriteOnce
+    size: 50Gi
+  
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+    requests:
+      cpu: 1000m
+      memory: 1Gi
+
+# Optional PgBouncer for connection pooling
+pgbouncer:
+  # Optional connection pooler - only needed for high-traffic deployments
+  # Set to true if you have >10 replicas or >100 concurrent connections
+  enabled: false
+  
+  image:
+    repository: edoburu/pgbouncer
+    tag: latest
+    pullPolicy: IfNotPresent
+  
+  poolMode: transaction
+  maxClientConn: 600
+  defaultPoolSize: 20
+  
+  resources:
+    limits:
+      cpu: 500m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi

@@ -1,0 +1,149 @@
+🎉 Attestation Store has been deployed!
+
+Release Name: {{ .Release.Name }}
+Namespace: {{ .Release.Namespace }}
+
+{{- if .Values.ingress.enabled }}
+
+📡 Access URL:
+{{- range .Values.ingress.hosts }}
+  {{- if .tls }}
+  https://{{ .host }}
+  {{- else }}
+  http://{{ .host }}
+  {{- end }}
+{{- end }}
+
+{{- else if eq .Values.service.type "NodePort" }}
+
+📡 Access via NodePort:
+  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "attstore.fullname" . }})
+  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo "http://$NODE_IP:$NODE_PORT"
+
+{{- else if eq .Values.service.type "LoadBalancer" }}
+
+📡 Access via LoadBalancer:
+  NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+  
+  export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "attstore.fullname" . }} --template "{{"{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}"}}")
+  echo "http://$SERVICE_IP:{{ .Values.service.port }}"
+
+{{- else }}
+
+📡 Access via Port-Forward:
+  kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ include "attstore.fullname" . }} 5003:{{ .Values.service.port }}
+  
+  Then visit: http://localhost:5003
+
+{{- end }}
+
+🔐 Default Admin Credentials:
+  Username: {{ .Values.config.admin.username }}
+  {{- if eq .Values.config.admin.password "admin#admin" }}
+  Password: admin#admin  ⚠️  CHANGE THIS IMMEDIATELY IN PRODUCTION!
+  {{- else }}
+  Password: (retrieve from secret)
+    kubectl get secret --namespace {{ .Release.Namespace }} {{ include "attstore.fullname" . }} -o jsonpath="{.data.DEFAULT_ADMIN_PASSWORD}" | base64 --decode
+  {{- end }}
+
+{{- if .Values.database.postgresql.enabled }}
+
+🗄️  PostgreSQL Database:
+  Host: {{ include "attstore.postgresql.fullname" . }}
+  Port: {{ .Values.database.postgresql.port }}
+  Database: {{ .Values.database.postgresql.database }}
+  Username: {{ .Values.database.postgresql.username }}
+  
+  Retrieve password:
+    kubectl get secret --namespace {{ .Release.Namespace }} {{ include "attstore.postgresql.fullname" . }} -o jsonpath="{.data.POSTGRES_PASSWORD}" | base64 --decode
+
+{{- end }}
+
+{{- if .Values.minio.enabled }}
+
+📦 MinIO Object Storage:
+  API URL: http://{{ include "attstore.minio.fullname" . }}:{{ .Values.minio.service.port }}
+  Console URL: http://{{ include "attstore.minio.fullname" . }}:{{ .Values.minio.service.consolePort }}
+  Root User: {{ .Values.minio.rootUser }}
+  
+  Retrieve root password:
+    kubectl get secret --namespace {{ .Release.Namespace }} {{ include "attstore.minio.fullname" . }} -o jsonpath="{.data.MINIO_ROOT_PASSWORD}" | base64 --decode
+  
+  Access MinIO Console (port-forward):
+    kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ include "attstore.minio.fullname" . }} 9001:{{ .Values.minio.service.consolePort }}
+    Then visit: http://localhost:9001
+
+{{- end }}
+
+{{- if .Values.database.externalDatabase.enabled }}
+
+🗄️  External Database Configuration:
+  {{- if .Values.database.externalDatabase.host }}
+  Host: {{ .Values.database.externalDatabase.host }}
+  {{- else }}
+  ⚠️  External database host not configured! Set database.externalDatabase.host
+  {{- end }}
+  Database: {{ .Values.database.externalDatabase.database }}
+  Username: {{ .Values.database.externalDatabase.username }}
+
+{{- end }}
+
+{{- if eq .Values.storage.cloudStorage.provider "AWS" }}
+
+☁️  AWS S3 Storage:
+  {{- if .Values.storage.cloudStorage.aws.bucket }}
+  Bucket: {{ .Values.storage.cloudStorage.aws.bucket }}
+  {{- else }}
+  ⚠️  S3 bucket not configured! Set storage.cloudStorage.aws.bucket
+  {{- end }}
+  Region: {{ .Values.storage.cloudStorage.aws.region }}
+  {{- if .Values.serviceAccount.annotations }}
+  {{- if index .Values.serviceAccount.annotations "eks.amazonaws.com/role-arn" }}
+  IAM Role (IRSA): {{ index .Values.serviceAccount.annotations "eks.amazonaws.com/role-arn" }}
+  {{- else }}
+  ⚠️  IRSA not configured. Add eks.amazonaws.com/role-arn annotation to serviceAccount
+  {{- end }}
+  {{- end }}
+
+{{- end }}
+
+📊 Monitoring:
+  Check deployment status:
+    kubectl --namespace {{ .Release.Namespace }} get deployment {{ include "attstore.fullname" . }}
+  
+  View logs:
+    kubectl --namespace {{ .Release.Namespace }} logs -f deployment/{{ include "attstore.fullname" . }}
+  
+  Health check:
+    kubectl --namespace {{ .Release.Namespace }} exec -it deployment/{{ include "attstore.fullname" . }} -- curl http://localhost:{{ .Values.config.port }}/healthz
+
+📚 Documentation:
+  Chart README: https://github.com/scribe-security/attstore/tree/main/helm/attstore
+  Application Docs: Built into the application at /docs endpoint
+
+⚙️  Configuration Notes:
+{{- if not .Values.config.sessionSecret }}
+  • Session secret was auto-generated. For production, set config.sessionSecret
+{{- end }}
+{{- if not .Values.config.jwtSecretKey }}
+  • JWT secret was auto-generated. For production, set config.jwtSecretKey
+{{- end }}
+{{- if and .Values.database.postgresql.enabled (not .Values.database.postgresql.password) }}
+  • PostgreSQL password was auto-generated
+{{- end }}
+{{- if and .Values.minio.enabled (not .Values.minio.rootPassword) }}
+  • MinIO password was auto-generated
+{{- end }}
+
+{{- if eq .Values.config.admin.password "admin#admin" }}
+
+⚠️  SECURITY WARNING:
+  Default admin password is in use!
+  Please change it immediately after first login.
+
+{{- end }}
+
+For more information, run:
+  helm status {{ .Release.Name }} --namespace {{ .Release.Namespace }}
+  helm get values {{ .Release.Name }} --namespace {{ .Release.Namespace }}

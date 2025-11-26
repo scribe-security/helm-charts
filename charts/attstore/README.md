@@ -1,0 +1,359 @@
+# Attestation Store Helm Chart
+
+This Helm chart deploys the Attestation Store, a secure storage and verification system for software attestations and evidence, on Kubernetes.
+
+## Overview
+
+The Attestation Store provides a centralized repository for storing, managing, and verifying software supply chain attestations including SBOMs, vulnerability scans, and policy compliance results.
+
+## Prerequisites
+
+- Kubernetes 1.19+
+- Helm 3.0+
+- PV provisioner support in the underlying infrastructure (for persistent storage)
+- (Optional) Ingress controller (nginx-ingress, AWS ALB, etc.)
+- (Optional) cert-manager for TLS certificates
+
+## Deployment Modes
+
+This chart supports three deployment modes to fit different use cases:
+
+### 1. Proof-of-Concept (PoC) Mode - **Default**
+
+Minimal setup for testing, development, and demos.
+
+**Features:**
+- 1 replica
+- SQLite database (no external database required)
+- Local file storage (PersistentVolume)
+- No MinIO or PostgreSQL
+- Optional Ingress
+
+**Use Cases:** Quick testing, development, demos, learning
+
+**Installation:**
+```bash
+helm install attstore ./attstore
+```
+
+### 2. Production Mode (Stand-Alone Full System)
+
+Complete self-contained deployment suitable for production on-premises environments.
+
+**Features:**
+- 2 replicas (configurable)
+- PostgreSQL database (StatefulSet)
+- MinIO object storage (Deployment)
+- Optional PgBouncer connection pooler
+- Ingress enabled with TLS
+- Pod disruption budget
+
+**Use Cases:** Production on-premises, air-gapped environments, private clouds
+
+**Installation:**
+```bash
+helm install attstore ./attstore -f values-production.yaml \
+  --set config.sessionSecret="$(openssl rand -base64 32)" \
+  --set config.jwtSecretKey="$(openssl rand -base64 32)" \
+  --set config.admin.password="YourSecurePassword" \
+  --set ingress.hosts[0].host="attstore.yourdomain.com" \
+  --set ingress.tls[0].hosts[0]="attstore.yourdomain.com"
+```
+
+### 3. AWS Deployment Mode
+
+Cloud-native deployment using AWS managed services.
+
+**Features:**
+- 2+ replicas with autoscaling
+- AWS RDS PostgreSQL (external)
+- AWS S3 for object storage
+- IRSA (IAM Roles for Service Accounts) for AWS access
+- ALB Ingress Controller
+- Anti-affinity for multi-AZ deployment
+
+**Use Cases:** Production AWS/EKS deployments
+
+**Installation:**
+```bash
+# Prerequisites: Create RDS instance, S3 bucket, and IAM role for IRSA
+
+helm install attstore ./attstore -f values-aws.yaml \
+  --set serviceAccount.annotations."eks\.amazonaws\.io/role-arn"="arn:aws:iam::ACCOUNT_ID:role/attstore-s3-access" \
+  --set storage.cloudStorage.aws.bucket="my-attstore-bucket" \
+  --set storage.cloudStorage.aws.region="us-east-1" \
+  --set database.externalDatabase.host="mydb.xxxx.us-east-1.rds.amazonaws.com" \
+  --set database.externalDatabase.password="RDSPassword" \
+  --set config.sessionSecret="$(openssl rand -base64 32)" \
+  --set config.jwtSecretKey="$(openssl rand -base64 32)" \
+  --set config.admin.password="YourSecurePassword"
+```
+
+## Installation
+
+### Quick Start (PoC Mode)
+
+```bash
+# Add the repository (if published)
+# helm repo add scribe https://charts.scribesecurity.com
+# helm repo update
+
+# Install from local directory
+helm install attstore ./attstore
+
+# Or with custom release name and namespace
+helm install my-attstore ./attstore --namespace attstore --create-namespace
+```
+
+### Configuration
+
+All configuration is done via the `values.yaml` file or `--set` flags. See [Configuration](#configuration-reference) section for details.
+
+#### Essential Configuration (Production)
+
+**⚠️ CRITICAL:** Always set these values for production deployments:
+
+```bash
+--set config.sessionSecret="your-session-secret"
+--set config.jwtSecretKey="your-jwt-secret"
+--set config.admin.password="your-admin-password"
+```
+
+Generate secure random secrets:
+```bash
+openssl rand -base64 32
+```
+
+## Configuration Reference
+
+### Global Parameters
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `replicaCount` | Number of replicas | `1` |
+| `image.repository` | Image repository | `ghcr.io/scribe-security/attstore` |
+| `image.tag` | Image tag | `latest` |
+| `image.pullPolicy` | Image pull policy | `IfNotPresent` |
+| `nameOverride` | Override chart name | `""` |
+| `fullnameOverride` | Override full name | `""` |
+
+### Service Configuration
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `service.type` | Service type | `ClusterIP` |
+| `service.port` | Service port | `5003` |
+| `service.nodePort` | NodePort (if type=NodePort) | `nil` |
+
+### Ingress Configuration
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `ingress.enabled` | Enable Ingress | `false` |
+| `ingress.className` | Ingress class name | `""` |
+| `ingress.annotations` | Ingress annotations | `{}` |
+| `ingress.hosts` | Ingress hosts configuration | See values.yaml |
+| `ingress.tls` | TLS configuration | `[]` |
+
+### Application Configuration
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `config.port` | Application port | `5003` |
+| `config.sessionSecret` | Flask session secret | Auto-generated |
+| `config.jwtSecretKey` | JWT signing key | Auto-generated |
+| `config.admin.username` | Admin username | `admin` |
+| `config.admin.password` | Admin password | `admin#admin` ⚠️ |
+| `config.admin.email` | Admin email | `admin@example.com` |
+| `config.presignedUrlExpiration` | Presigned URL expiration (seconds) | `3600` |
+
+### Storage Configuration
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `storage.type` | Storage type: `FILE_MOUNT` or `CLOUD_STORAGE` | `FILE_MOUNT` |
+| `storage.fileMount.path` | Path for file storage | `/app/storage` |
+| `storage.persistence.enabled` | Enable persistent storage | `true` |
+| `storage.persistence.size` | PVC size | `10Gi` |
+| `storage.persistence.storageClass` | Storage class | `""` (default) |
+| `storage.cloudStorage.provider` | Cloud provider: `AWS` or `MINIO` | `AWS` |
+| `storage.cloudStorage.aws.bucket` | S3 bucket name | `""` |
+| `storage.cloudStorage.aws.region` | AWS region | `us-east-1` |
+
+### Database Configuration
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `database.type` | Database type: `sqlite` or `postgresql` | `sqlite` |
+| `database.postgresql.enabled` | Enable bundled PostgreSQL | `false` |
+| `database.postgresql.host` | PostgreSQL host | Auto-generated |
+| `database.postgresql.port` | PostgreSQL port | `5432` |
+| `database.postgresql.database` | Database name | `attstoredb` |
+| `database.postgresql.username` | Database username | `attstoreuser` |
+| `database.postgresql.password` | Database password | Auto-generated |
+| `database.postgresql.persistence.enabled` | Enable PostgreSQL persistence | `true` |
+| `database.postgresql.persistence.size` | PVC size | `20Gi` |
+| `database.externalDatabase.enabled` | Use external database | `false` |
+| `database.externalDatabase.host` | External DB host | `""` |
+| `database.externalDatabase.password` | External DB password | `""` |
+
+### MinIO Configuration
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `minio.enabled` | Enable MinIO deployment | `false` |
+| `minio.rootUser` | MinIO root user | `minioadmin` |
+| `minio.rootPassword` | MinIO root password | Auto-generated |
+| `minio.bucket` | Bucket name | `attstorebucket` |
+| `minio.persistence.enabled` | Enable MinIO persistence | `true` |
+| `minio.persistence.size` | PVC size | `50Gi` |
+
+### Resource Configuration
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `resources.requests.cpu` | CPU request | `100m` |
+| `resources.requests.memory` | Memory request | `256Mi` |
+| `resources.limits.cpu` | CPU limit | `500m` |
+| `resources.limits.memory` | Memory limit | `512Mi` |
+
+### Autoscaling
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `autoscaling.enabled` | Enable HPA | `false` |
+| `autoscaling.minReplicas` | Minimum replicas | `1` |
+| `autoscaling.maxReplicas` | Maximum replicas | `10` |
+| `autoscaling.targetCPUUtilizationPercentage` | Target CPU % | `70` |
+
+## Examples
+
+### Example 1: PoC with NodePort Access
+
+```bash
+helm install attstore ./attstore \
+  --set service.type=NodePort \
+  --set service.nodePort=30503
+```
+
+### Example 2: Production with Custom Storage Class
+
+```bash
+helm install attstore ./attstore -f values-production.yaml \
+  --set database.postgresql.persistence.storageClass="fast-ssd" \
+  --set minio.persistence.storageClass="standard" \
+  --set config.sessionSecret="$(openssl rand -base64 32)" \
+  --set config.jwtSecretKey="$(openssl rand -base64 32)" \
+  --set config.admin.password="SecurePassword123"
+```
+
+### Example 3: AWS with External Secrets
+
+```yaml
+# Using external-secrets operator to fetch from AWS Secrets Manager
+# Create a SecretStore and ExternalSecret, then reference in values
+
+helm install attstore ./attstore -f values-aws.yaml \
+  --set database.externalDatabase.host="mydb.xyz.us-east-1.rds.amazonaws.com" \
+  --set storage.cloudStorage.aws.bucket="my-bucket" \
+  --set storage.cloudStorage.aws.region="us-east-1"
+```
+
+## Upgrading
+
+```bash
+# Upgrade with new values
+helm upgrade attstore ./attstore -f values-production.yaml
+
+# Upgrade with specific changes
+helm upgrade attstore ./attstore \
+  --set image.tag="v1.2.3" \
+  --set replicaCount=3
+```
+
+## Uninstallation
+
+```bash
+helm uninstall attstore --namespace attstore
+
+# Note: PVCs are not deleted automatically
+kubectl delete pvc -l app.kubernetes.io/instance=attstore -n attstore
+```
+
+## Troubleshooting
+
+### Check Pod Status
+
+```bash
+kubectl get pods -l app.kubernetes.io/name=attstore
+kubectl describe pod <pod-name>
+kubectl logs <pod-name>
+```
+
+### Check Database Connection
+
+```bash
+kubectl exec -it deployment/attstore -- python -c "
+from app import app, db
+with app.app_context():
+    from sqlalchemy import text
+    with db.engine.connect() as conn:
+        result = conn.execute(text('SELECT 1'))
+        print('Database connection OK')
+"
+```
+
+### Access Application Logs
+
+```bash
+kubectl logs -f deployment/attstore
+```
+
+### Common Issues
+
+1. **Pods stuck in Pending:** Check PVC provisioning and storage class availability
+2. **Database connection errors:** Verify PostgreSQL pod is running and credentials are correct
+3. **S3 access denied:** Check IRSA configuration and IAM policy permissions
+4. **Ingress not working:** Verify ingress controller is installed and configured
+
+## Security Best Practices
+
+1. **Always change default credentials** in production
+2. **Use strong randomly generated secrets** for session and JWT keys
+3. **Enable TLS/HTTPS** via Ingress with valid certificates
+4. **Use IRSA** for AWS deployments instead of static credentials
+5. **Restrict network access** using NetworkPolicies
+6. **Use external secret management** (AWS Secrets Manager, HashiCorp Vault, etc.)
+7. **Enable PodSecurityPolicies** or PodSecurity admission controller
+8. **Regularly update** the image to latest security patches
+
+## Development
+
+### Testing the Chart
+
+```bash
+# Lint the chart
+helm lint ./attstore
+
+# Dry run
+helm install attstore ./attstore --dry-run --debug
+
+# Template rendering
+helm template attstore ./attstore -f values-production.yaml > output.yaml
+```
+
+### Packaging
+
+```bash
+helm package ./attstore
+```
+
+## Support
+
+- **Issues:** https://github.com/scribe-security/attstore/issues
+- **Documentation:** https://github.com/scribe-security/attstore
+- **Email:** support@scribesecurity.com
+
+## License
+
+See the main repository for license information.

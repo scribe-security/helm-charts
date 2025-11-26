@@ -1,0 +1,89 @@
+# Example: Production Mode (Stand-Alone Full System)
+# Complete self-contained production deployment with PostgreSQL and MinIO
+
+replicaCount: 2
+
+# IMPORTANT: Set these secrets securely
+config:
+  sessionSecret: ""  # REQUIRED: Set via --set or use external-secrets
+  jwtSecretKey: ""   # REQUIRED: Set via --set or use external-secrets
+  admin:
+    password: ""  # REQUIRED: Set via --set
+    email: "admin@company.com"
+
+# Enable Ingress with your domain
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+  hosts:
+    - host: attstore.company.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: attstore-tls
+      hosts:
+        - attstore.company.com
+
+# Production resources
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 250m
+    memory: 512Mi
+
+# Enable MinIO for object storage
+storage:
+  type: CLOUD_STORAGE
+  cloudStorage:
+    provider: MINIO
+    minio:
+      secure: "false"  # Set to "true" if MinIO has TLS
+
+# Enable PostgreSQL
+database:
+  type: postgresql
+  postgresql:
+    enabled: true
+    password: ""  # Will be auto-generated, retrieve from secret
+    persistence:
+      enabled: true
+      storageClass: "fast-ssd"  # Use your production storage class
+      size: 20Gi
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+      requests:
+        cpu: 500m
+        memory: 512Mi
+
+# Enable MinIO
+minio:
+  enabled: true
+  rootPassword: ""  # Will be auto-generated, retrieve from secret
+  persistence:
+    enabled: true
+    storageClass: "standard"  # Use your storage class
+    size: 50Gi
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+    requests:
+      cpu: 1000m
+      memory: 1Gi
+
+# Enable connection pooler
+pgbouncer:
+  enabled: true
+
+# Enable pod disruption budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1

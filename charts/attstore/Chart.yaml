@@ -1,0 +1,32 @@
+apiVersion: v2
+name: attstore
+description: Attestation Store - A secure storage and verification system for software attestations and evidence
+type: application
+
+# Chart version - increment this when making changes to the chart
+version: 1.3.0
+
+# Application version - should match the attstore image version
+appVersion: "1.3.0"
+
+keywords:
+  - attestation
+  - sbom
+  - security
+  - supply-chain
+  - evidence
+  - scribe-security
+
+home: https://github.com/scribe-security/attstore
+sources:
+  - https://github.com/scribe-security/attstore
+
+maintainers:
+  - name: Scribe Security
+    email: support@scribesecurity.com
+
+# Optional dependencies (can be enabled/disabled via values)
+# dependencies: []
+
+# Minimum Kubernetes version
+kubeVersion: ">=1.19.0-0"

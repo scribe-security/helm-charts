@@ -1,0 +1,72 @@
+{{- if .Values.minio.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "attstore.minio.fullname" . }}
+  labels:
+    {{- include "attstore.minio.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "attstore.minio.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "attstore.minio.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - name: minio
+        image: "{{ .Values.minio.image.repository }}:{{ .Values.minio.image.tag }}"
+        imagePullPolicy: {{ .Values.minio.image.pullPolicy }}
+        command:
+        - /bin/sh
+        - -c
+        args:
+        - |
+          minio server /data --console-address ":9001" &
+          MINIO_PID=$!
+          sleep 5
+          mc alias set myminio http://localhost:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD
+          mc mb myminio/{{ .Values.minio.bucket }} --ignore-existing
+          wait $MINIO_PID
+        ports:
+        - name: api
+          containerPort: 9000
+          protocol: TCP
+        - name: console
+          containerPort: 9001
+          protocol: TCP
+        envFrom:
+        - secretRef:
+            name: {{ include "attstore.minio.fullname" . }}
+        livenessProbe:
+          httpGet:
+            path: /minio/health/live
+            port: 9000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /minio/health/ready
+            port: 9000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        resources:
+          {{- toYaml .Values.minio.resources | nindent 12 }}
+        volumeMounts:
+        - name: data
+          mountPath: /data
+      volumes:
+      - name: data
+        {{- if .Values.minio.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: {{ include "attstore.minio.fullname" . }}
+        {{- else }}
+        emptyDir: {}
+        {{- end }}
+{{- end }}
