@@ -147,5 +147,17 @@ jobs:
       - name: Wait for release workflow
         if: steps.detect-changes.outputs.charts_changed == 'true'
         run: |
-          echo "Tags created. The release workflow will be triggered automatically."
-          echo "Check the Actions tab for the 'release' workflow run."
+          echo "Tags created. Triggering release process..."
+
+      - name: Trigger release workflow
+        if: steps.detect-changes.outputs.charts_changed == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'release.yaml',
+              ref: 'master'
+            });
+            console.log('Release workflow triggered successfully');
