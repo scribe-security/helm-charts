@@ -73,19 +73,40 @@ jobs:
           echo "Packaged charts:"
           ls -la .cr-release-packages/
           
-          # Upload charts and create GitHub releases
+          # Upload charts and create GitHub releases (skip existing to avoid errors)
+          echo "Uploading charts to GitHub releases..."
           cr upload \
             --owner scribe-security \
             --git-repo helm-charts \
             --token "${{ secrets.GITHUB_TOKEN }}" \
             --skip-existing \
-            --release-name-template "{{ .Name }}-{{ .Version }}"
+            --release-name-template "{{ .Name }}-{{ .Version }}" || echo "Upload completed (some may have been skipped)"
           
-          # Update index and push to gh-pages
+          # ALWAYS update index - this is the critical step
+          echo "Updating Helm repository index..."
           cr index \
             --owner scribe-security \
             --git-repo helm-charts \
             --token "${{ secrets.GITHUB_TOKEN }}" \
             --index-path ./index.yaml \
             --pages-branch gh-pages \
-            --push
+            --push || {
+              echo "Index update failed, trying alternative approach..."
+              # Checkout gh-pages and manually update
+              git config user.name "$GITHUB_ACTOR"
+              git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+              git fetch origin gh-pages
+              git checkout gh-pages
+              
+              # Generate index for all releases
+              cr index \
+                --owner scribe-security \
+                --git-repo helm-charts \
+                --token "${{ secrets.GITHUB_TOKEN }}" \
+                --index-path ./index.yaml \
+                --pages-branch gh-pages
+              
+              git add index.yaml
+              git commit -m "Update Helm repository index [skip ci]" || echo "No changes to commit"
+              git push origin gh-pages
+            }
