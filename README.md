@@ -8,6 +8,8 @@ geometry: margin=2cm
 Scribe-provided charts allow you to manage and verifing the integrity of your supply chain.
 
 ## Supported charts
+* [Attestation](./charts/attstore/README.md): Scribe attestation helm chart, Attest the integrity of your supply chain.
+
 * [Integrity admission](./charts/admission-controller/README.md): Scribe admissions helm chart, Validate the integrity of your supply chain.
 
 ## Installing Charts
@@ -16,6 +18,7 @@ helm repo add scribe https://scribe-security.github.io/helm-charts
 helm repo update
 helm search repo scribe
 ```
+
 
 ### Installing admission
 ```
