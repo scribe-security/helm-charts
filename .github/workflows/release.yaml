@@ -76,7 +76,7 @@ jobs:
           # Upload charts and create GitHub releases
           cr upload \
             --owner scribe-security \
-            --repo helm-charts \
+            --git-repo helm-charts \
             --token "${{ secrets.GITHUB_TOKEN }}" \
             --skip-existing \
             --release-name-template "{{ .Name }}-{{ .Version }}"
@@ -84,7 +84,7 @@ jobs:
           # Update index and push to gh-pages
           cr index \
             --owner scribe-security \
-            --repo helm-charts \
+            --git-repo helm-charts \
             --token "${{ secrets.GITHUB_TOKEN }}" \
             --index-path ./index.yaml \
             --pages-branch gh-pages \
