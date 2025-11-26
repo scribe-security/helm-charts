@@ -5,8 +5,6 @@ on:
     types: [closed]
     branches:
       - master
-    paths:
-      - 'charts/**'
   workflow_dispatch:
     inputs:
       chart_name:
