@@ -52,6 +52,15 @@ Complete self-contained deployment suitable for production on-premises environme
 
 **Installation:**
 ```bash
+# Install from Scribe repository
+helm install attstore scribe/attstore -f scribe/attstore/values-production.yaml \
+  --set config.sessionSecret="$(openssl rand -base64 32)" \
+  --set config.jwtSecretKey="$(openssl rand -base64 32)" \
+  --set config.admin.password="YourSecurePassword" \
+  --set ingress.hosts[0].host="attstore.yourdomain.com" \
+  --set ingress.tls[0].hosts[0]="attstore.yourdomain.com"
+
+# Or from local directory (development)
 helm install attstore ./attstore -f values-production.yaml \
   --set config.sessionSecret="$(openssl rand -base64 32)" \
   --set config.jwtSecretKey="$(openssl rand -base64 32)" \
@@ -78,6 +87,18 @@ Cloud-native deployment using AWS managed services.
 ```bash
 # Prerequisites: Create RDS instance, S3 bucket, and IAM role for IRSA
 
+# Install from Scribe repository
+helm install attstore scribe/attstore -f scribe/attstore/values-aws.yaml \
+  --set serviceAccount.annotations."eks\.amazonaws\.io/role-arn"="arn:aws:iam::ACCOUNT_ID:role/attstore-s3-access" \
+  --set storage.cloudStorage.aws.bucket="my-attstore-bucket" \
+  --set storage.cloudStorage.aws.region="us-east-1" \
+  --set database.externalDatabase.host="mydb.xxxx.us-east-1.rds.amazonaws.com" \
+  --set database.externalDatabase.password="RDSPassword" \
+  --set config.sessionSecret="$(openssl rand -base64 32)" \
+  --set config.jwtSecretKey="$(openssl rand -base64 32)" \
+  --set config.admin.password="YourSecurePassword"
+
+# Or from local directory (development)
 helm install attstore ./attstore -f values-aws.yaml \
   --set serviceAccount.annotations."eks\.amazonaws\.io/role-arn"="arn:aws:iam::ACCOUNT_ID:role/attstore-s3-access" \
   --set storage.cloudStorage.aws.bucket="my-attstore-bucket" \
@@ -91,18 +112,25 @@ helm install attstore ./attstore -f values-aws.yaml \
 
 ## Installation
 
+### Add Helm Repository
+
+```bash
+# Add the Scribe Helm repository
+helm repo add scribe https://scribe-security.github.io/helm-charts
+helm repo update
+```
+
 ### Quick Start (PoC Mode)
 
 ```bash
-# Add the repository (if published)
-# helm repo add scribe https://charts.scribesecurity.com
-# helm repo update
+# Install from Scribe repository
+helm install attstore scribe/attstore
 
-# Install from local directory
+# Or install from local directory (for development)
 helm install attstore ./attstore
 
-# Or with custom release name and namespace
-helm install my-attstore ./attstore --namespace attstore --create-namespace
+# With custom release name and namespace
+helm install my-attstore scribe/attstore --namespace attstore --create-namespace
 ```
 
 ### Configuration
@@ -231,7 +259,7 @@ openssl rand -base64 32
 ### Example 1: PoC with NodePort Access
 
 ```bash
-helm install attstore ./attstore \
+helm install attstore scribe/attstore \
   --set service.type=NodePort \
   --set service.nodePort=30503
 ```
@@ -239,7 +267,9 @@ helm install attstore ./attstore \
 ### Example 2: Production with Custom Storage Class
 
 ```bash
-helm install attstore ./attstore -f values-production.yaml \
+helm install attstore scribe/attstore \
+  --version 1.0.0 \
+  -f https://raw.githubusercontent.com/scribe-security/attstore/main/helm/attstore/values-production.yaml \
   --set database.postgresql.persistence.storageClass="fast-ssd" \
   --set minio.persistence.storageClass="standard" \
   --set config.sessionSecret="$(openssl rand -base64 32)" \
@@ -253,7 +283,8 @@ helm install attstore ./attstore -f values-production.yaml \
 # Using external-secrets operator to fetch from AWS Secrets Manager
 # Create a SecretStore and ExternalSecret, then reference in values
 
-helm install attstore ./attstore -f values-aws.yaml \
+helm install attstore scribe/attstore \
+  -f https://raw.githubusercontent.com/scribe-security/attstore/main/helm/attstore/values-aws.yaml \
   --set database.externalDatabase.host="mydb.xyz.us-east-1.rds.amazonaws.com" \
   --set storage.cloudStorage.aws.bucket="my-bucket" \
   --set storage.cloudStorage.aws.region="us-east-1"
@@ -262,11 +293,21 @@ helm install attstore ./attstore -f values-aws.yaml \
 ## Upgrading
 
 ```bash
-# Upgrade with new values
-helm upgrade attstore ./attstore -f values-production.yaml
+# Update repository
+helm repo update
+
+# Upgrade to latest version
+helm upgrade attstore scribe/attstore
+
+# Upgrade with specific version
+helm upgrade attstore scribe/attstore --version 1.2.3
+
+# Upgrade with custom values
+helm upgrade attstore scribe/attstore \
+  -f https://raw.githubusercontent.com/scribe-security/attstore/main/helm/attstore/values-production.yaml
 
 # Upgrade with specific changes
-helm upgrade attstore ./attstore \
+helm upgrade attstore scribe/attstore \
   --set image.tag="v1.2.3" \
   --set replicaCount=3
 ```
@@ -332,14 +373,21 @@ kubectl logs -f deployment/attstore
 ### Testing the Chart
 
 ```bash
+# Search for available versions
+helm search repo scribe/attstore --versions
+
+# Fetch the chart locally for inspection
+helm pull scribe/attstore --untar
+
 # Lint the chart
 helm lint ./attstore
 
-# Dry run
-helm install attstore ./attstore --dry-run --debug
+# Dry run installation
+helm install attstore scribe/attstore --dry-run --debug
 
 # Template rendering
-helm template attstore ./attstore -f values-production.yaml > output.yaml
+helm template attstore scribe/attstore \
+  -f https://raw.githubusercontent.com/scribe-security/attstore/main/helm/attstore/values-production.yaml > output.yaml
 ```
 
 ### Packaging
