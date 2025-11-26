@@ -7,6 +7,16 @@ on:
       - master
     paths:
       - 'charts/**/Chart.yaml'
+  workflow_dispatch:
+    inputs:
+      chart_name:
+        description: 'Chart name to release (leave empty to detect from recent changes)'
+        required: false
+        type: string
+      chart_version:
+        description: 'Chart version to release (leave empty to use version from Chart.yaml)'
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -15,7 +25,7 @@ permissions:
 
 jobs:
   auto-tag-and-release:
-    if: github.event.pull_request.merged == true
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -29,10 +39,75 @@ jobs:
           git config user.name "$GITHUB_ACTOR"
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
 
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
       - name: Detect changed charts and create tags
         id: detect-changes
         run: |
-          # Get the list of changed Chart.yaml files in the PR
+          # Handle manual workflow dispatch
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            CHART_NAME="${{ inputs.chart_name }}"
+            CHART_VERSION="${{ inputs.chart_version }}"
+            
+            if [ -n "$CHART_NAME" ]; then
+              # Specific chart requested
+              chart_file="charts/${CHART_NAME}/Chart.yaml"
+              
+              if [ ! -f "$chart_file" ]; then
+                echo "Error: Chart $CHART_NAME not found at $chart_file"
+                exit 1
+              fi
+              
+              chart_name=$(yq eval '.name' "$chart_file")
+              
+              if [ -z "$CHART_VERSION" ]; then
+                chart_version=$(yq eval '.version' "$chart_file")
+              else
+                chart_version="$CHART_VERSION"
+              fi
+              
+              tag_name="${chart_name}-${chart_version}"
+              
+              echo "Manual release: Chart: $chart_name, Version: $chart_version, Tag: $tag_name"
+              
+              if git rev-parse "$tag_name" >/dev/null 2>&1; then
+                echo "Tag $tag_name already exists, skipping"
+              else
+                echo "Creating tag $tag_name"
+                git tag -a "$tag_name" -m "Release $chart_name version $chart_version"
+                git push origin "$tag_name"
+              fi
+            else
+              # No specific chart - release all charts
+              echo "No chart specified, releasing all charts in charts/ directory"
+              for chart_file in charts/*/Chart.yaml; do
+                if [ -f "$chart_file" ]; then
+                  chart_name=$(yq eval '.name' "$chart_file")
+                  chart_version=$(yq eval '.version' "$chart_file")
+                  
+                  tag_name="${chart_name}-${chart_version}"
+                  
+                  echo "Chart: $chart_name, Version: $chart_version, Tag: $tag_name"
+                  
+                  if git rev-parse "$tag_name" >/dev/null 2>&1; then
+                    echo "Tag $tag_name already exists, skipping"
+                  else
+                    echo "Creating tag $tag_name"
+                    git tag -a "$tag_name" -m "Release $chart_name version $chart_version"
+                    git push origin "$tag_name"
+                  fi
+                fi
+              done
+            fi
+            
+            echo "charts_changed=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # Handle PR merge - detect changed Chart.yaml files
           CHANGED_CHARTS=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.merge_commit_sha }} | grep 'charts/.*/Chart.yaml' || true)
           
           if [ -z "$CHANGED_CHARTS" ]; then
@@ -62,12 +137,6 @@ jobs:
               git push origin "$tag_name"
             fi
           done
-
-      - name: Install yq
-        if: steps.detect-changes.outputs.charts_changed == 'true'
-        run: |
-          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
-          sudo chmod +x /usr/local/bin/yq
 
       - name: Wait for release workflow
         if: steps.detect-changes.outputs.charts_changed == 'true'
