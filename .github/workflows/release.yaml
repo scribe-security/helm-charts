@@ -50,20 +50,42 @@ jobs:
         run: |
           helm repo add scribe https://scribe-security.github.io/helm-charts
 
-      - name: Package all charts (for initial releases)
+      - name: Install chart-releaser
         run: |
+          VERSION=v1.4.1
+          curl -sSL "https://github.com/helm/chart-releaser/releases/download/${VERSION}/chart-releaser_${VERSION#v}_linux_amd64.tar.gz" | tar xzf - -C /tmp
+          sudo mv /tmp/cr /usr/local/bin/cr
+          cr version
+
+      - name: Package and release charts
+        run: |
+          # Package all charts
           mkdir -p .cr-release-packages
           for chart_dir in charts/*/; do
             if [ -f "${chart_dir}Chart.yaml" ]; then
-              echo "Packaging $(basename $chart_dir)..."
-              helm dependency update "$chart_dir" || true
-              helm package "$chart_dir" -d .cr-release-packages || echo "Failed to package $(basename $chart_dir)"
+              chart_name=$(basename $chart_dir)
+              echo "Packaging ${chart_name}..."
+              helm dependency update "$chart_dir" 2>/dev/null || true
+              helm package "$chart_dir" -d .cr-release-packages
             fi
           done
+          
+          echo "Packaged charts:"
           ls -la .cr-release-packages/
-
-      - name: Run chart-releaser
-        uses: helm/chart-releaser-action@v1.4.1
-        env:
-          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          # CR_SKIP_EXISTING: true  # Disabled to allow packaging all charts including new ones
+          
+          # Upload charts and create GitHub releases
+          cr upload \
+            --owner scribe-security \
+            --repo helm-charts \
+            --token "${{ secrets.GITHUB_TOKEN }}" \
+            --skip-existing \
+            --release-name-template "{{ .Name }}-{{ .Version }}"
+          
+          # Update index and push to gh-pages
+          cr index \
+            --owner scribe-security \
+            --repo helm-charts \
+            --token "${{ secrets.GITHUB_TOKEN }}" \
+            --index-path ./index.yaml \
+            --pages-branch gh-pages \
+            --push
