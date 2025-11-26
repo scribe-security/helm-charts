@@ -1,0 +1,7 @@
+# Chart Releaser configuration
+owner: scribe-security
+repo: helm-charts
+
+# Package all charts, not just changed ones
+# This is useful for initial releases
+skip-existing: false

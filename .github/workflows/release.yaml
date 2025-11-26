@@ -50,6 +50,18 @@ jobs:
         run: |
           helm repo add scribe https://scribe-security.github.io/helm-charts
 
+      - name: Package all charts (for initial releases)
+        run: |
+          mkdir -p .cr-release-packages
+          for chart_dir in charts/*/; do
+            if [ -f "${chart_dir}Chart.yaml" ]; then
+              echo "Packaging $(basename $chart_dir)..."
+              helm dependency update "$chart_dir" || true
+              helm package "$chart_dir" -d .cr-release-packages || echo "Failed to package $(basename $chart_dir)"
+            fi
+          done
+          ls -la .cr-release-packages/
+
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.4.1
         env:
