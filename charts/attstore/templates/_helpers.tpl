@@ -221,8 +221,12 @@ File storage base URL
 {{- define "attstore.fileStorageBaseUrl" -}}
 {{- if .Values.storage.fileMount.baseUrl }}
 {{- .Values.storage.fileMount.baseUrl }}
+{{- else if .Values.ingress.enabled }}
+{{- $host := (index .Values.ingress.hosts 0).host }}
+{{- $scheme := ternary "https" "http" (gt (len .Values.ingress.tls) 0) }}
+{{- printf "%s://%s" $scheme $host }}
 {{- else }}
-{{- printf "http://%s:%d/download" (include "attstore.fullname" .) (.Values.service.port | int) }}
+{{- printf "http://%s:%d" (include "attstore.fullname" .) (.Values.service.port | int) }}
 {{- end }}
 {{- end }}
 

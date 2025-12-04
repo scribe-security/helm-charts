@@ -135,6 +135,22 @@ Namespace: {{ .Release.Namespace }}
 {{- if and .Values.minio.enabled (not .Values.minio.rootPassword) }}
   • MinIO password was auto-generated
 {{- end }}
+{{- if and (eq .Values.storage.type "FILE_MOUNT") (not .Values.storage.fileMount.baseUrl) }}
+{{- if not .Values.ingress.enabled }}
+  
+  ⚠️  FILE_MOUNT Storage Configuration:
+  The upload/download URLs are currently set to: {{ include "attstore.fileStorageBaseUrl" . }}
+  
+  This is an internal cluster URL and will NOT work for external clients!
+  
+  To fix this, set one of the following:
+  1. Enable ingress and configure ingress.hosts (recommended)
+  2. Set storage.fileMount.baseUrl to your external URL:
+     --set storage.fileMount.baseUrl=https://your-external-domain.com
+  3. Use port-forwarding and set:
+     --set storage.fileMount.baseUrl=http://localhost:5003
+{{- end }}
+{{- end }}
 
 {{- if eq .Values.config.admin.password "admin#admin" }}
 

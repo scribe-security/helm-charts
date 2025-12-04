@@ -4,10 +4,10 @@ description: Attestation Store - A secure storage and verification system for so
 type: application
 
 # Chart version - increment this when making changes to the chart
-version: 1.5.0
+version: 1.5.2
 
 # Application version - should match the attstore image version
-appVersion: "1.5.0"
+appVersion: "1.5.2"
 
 keywords:
   - attestation
