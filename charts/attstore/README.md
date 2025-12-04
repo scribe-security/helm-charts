@@ -350,6 +350,73 @@ helm install attstore scribe/attstore \
 
 **Note:** Ensure your TLS certificate exists as a Kubernetes secret or use cert-manager to automatically provision certificates.
 
+### File Storage Configuration (FILE_MOUNT Mode)
+
+When using `FILE_MOUNT` storage type (default in PoC mode), the application stores attestation files on a local persistent volume and generates upload/download URLs for clients. 
+
+**⚠️ CRITICAL:** The `storage.fileMount.baseUrl` setting determines what URL clients receive for uploading/downloading files. If not configured correctly, clients outside the cluster will receive internal cluster URLs that they cannot access.
+
+#### Configuration Options:
+
+**Option 1: Enable Ingress (Recommended)**
+
+When ingress is enabled, the chart automatically uses the ingress host as the base URL:
+
+```bash
+helm install attstore scribe/attstore \
+  --set ingress.enabled=true \
+  --set ingress.className="nginx" \
+  --set 'ingress.hosts[0].host=attstore.yourdomain.com' \
+  --set 'ingress.hosts[0].paths[0].path=/' \
+  --set 'ingress.hosts[0].paths[0].pathType=Prefix'
+
+# Files will be accessible at: https://attstore.yourdomain.com/evidence/download/...
+```
+
+**Option 2: Set Base URL Explicitly**
+
+For LoadBalancer or NodePort services, or when using port-forwarding:
+
+```bash
+# For LoadBalancer
+helm install attstore scribe/attstore \
+  --set service.type=LoadBalancer \
+  --set storage.fileMount.baseUrl="http://your-loadbalancer-ip:5003"
+
+# For NodePort
+helm install attstore scribe/attstore \
+  --set service.type=NodePort \
+  --set service.nodePort=30503 \
+  --set storage.fileMount.baseUrl="http://your-node-ip:30503"
+
+# For port-forwarding (development)
+helm install attstore scribe/attstore \
+  --set storage.fileMount.baseUrl="http://localhost:5003"
+# Then: kubectl port-forward svc/attstore 5003:5003
+```
+
+**Option 3: Default (Not Recommended for External Clients)**
+
+If neither ingress is enabled nor `baseUrl` is set, the chart defaults to the internal Kubernetes service URL (e.g., `http://attstore:5003`). This **will NOT work** for clients outside the cluster!
+
+#### Troubleshooting
+
+If clients are receiving URLs like `http://attstore:5003` or internal cluster names:
+
+1. Check if ingress is enabled and properly configured
+2. Set `storage.fileMount.baseUrl` explicitly to an externally accessible URL
+3. Verify the URL is reachable from where your clients are running
+
+```bash
+# Check current configuration
+helm get values attstore
+
+# Update the baseUrl
+helm upgrade attstore scribe/attstore \
+  --set storage.fileMount.baseUrl="https://your-external-url.com" \
+  --reuse-values
+```
+
 ### PgBouncer Connection Pooling
 
 PgBouncer is optional and only needed for high-scale deployments (10+ replicas or 100+ concurrent connections). 
